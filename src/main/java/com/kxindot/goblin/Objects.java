@@ -639,37 +639,41 @@ public final class Objects {
     }
     
     /**
-     * 判断数组是否包含元素
-     * @param a A[] 数组
-     * @param e A 元素
+     * 判断数组内是否包含指定元素
+     * @param as A[] 数组
+     * @param a A 元素
      * @return - 若包含元素则返回true,反之false
      */
-    public static <A> boolean contains(A[] a, A e) {
-        return Comparable.class.isInstance(e) 
-                ? Arrays.binarySearch(a, e, null) >= 0
-                : Arrays.stream(a).filter(t -> equals(t, e)).findFirst().isPresent();
+    public static <A> boolean contains(A[] as, A a) {
+        if (Comparable.class.isInstance(a)) {
+            return Arrays.binarySearch(as, a, null) >= 0;
+        }
+        for (A e : as) {
+            if (equals(e, a)) return true;
+        }
+        return false;
     }
     
     /**
      * 判断数组是否包含元素
-     * @param a A[] 数组
-     * @param e A 元素
+     * @param as A[] 数组
+     * @param a A 元素
      * @param c {@link Comparator} 比较器
      * @return - 若包含元素则返回true,反之false
      */
-    public static <A> boolean contains(A[] a, A e, Comparator<A> c) {
-        return Arrays.binarySearch(a, e, c) >= 0;
+    public static <A> boolean contains(A[] as, A a, Comparator<A> c) {
+        return Arrays.binarySearch(as, a, c) >= 0;
     }
     
     /**
-     * 判断数组是否包含元素
-     * @param a A[] 数组
-     * @param e B 元素
-     * @param c {@link Comparate} 比较器
+     * 判断数组a内是否包含指定元素b
+     * @param as A[] 数组
+     * @param b B 元素
+     * @param c {@link Comparater} 比较器
      * @return - 若包含元素则返回true,反之false
      */
-    public static <A, B> boolean contains(A[] a, B e, Comparate<A, B> c) {
-        return binarySearch0(a, 0, a.length, e, c) >= 0;
+    public static <A, B> boolean contains(A[] as, B b, Comparater<A, B> c) {
+        return binarySearch0(as, 0, as.length, b, c) >= 0;
     }
     
     /**
@@ -677,12 +681,12 @@ public final class Objects {
      * @author ZhaoQingJiang
      */
     @FunctionalInterface
-    public interface Comparate<A, B> {int compare(A a, B b);}
+    public interface Comparater<A, B> {int compare(A a, B b);}
     
     /**
-     * 使用Comparate接口对数组进行二分查找
+     * 使用Comparater接口对数组进行二分查找
      */
-    private static <A, B> int binarySearch0(A[] a, int fromIndex, int toIndex, B k, Comparate<A, B> c) {
+    private static <A, B> int binarySearch0(A[] a, int fromIndex, int toIndex, B k, Comparater<A, B> c) {
         int low = fromIndex;
         int high = toIndex - 1;
         while (low <= high) {
