@@ -10,6 +10,14 @@ import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Resources.Jar_Entry_Sep;
 import static com.kxindot.goblin.Resources.Jar_Extension;
+import static com.kxindot.goblin.Resources.exists;
+import static com.kxindot.goblin.Resources.getSimpleFileName;
+import static com.kxindot.goblin.Resources.isDirectory;
+import static com.kxindot.goblin.Resources.isFile;
+import static com.kxindot.goblin.Resources.isJarFile;
+import static com.kxindot.goblin.Resources.isJavaClassFile;
+import static com.kxindot.goblin.Resources.listFile;
+import static com.kxindot.goblin.Resources.loadJarResources;
 import static com.kxindot.goblin.Resources.loadResources;
 import static com.kxindot.goblin.compile.JavaDynamicClassLoader.classLoader;
 import static com.kxindot.goblin.compile.JavaDynamicClassLoader.defaultClassLoader;
@@ -22,6 +30,7 @@ import static javax.tools.StandardLocation.SOURCE_PATH;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -40,10 +49,12 @@ import javax.tools.JavaFileObject.Kind;
 import com.kxindot.goblin.Resources.JarResourceLoader;
 
 /**
- * @author zhaoqingjiang
+ * Java动态编译文件管理器
+ * @author ZhaoQingJiang
  */
 public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileManager> {
     
+    private static DependencyFilter filter = new DependencyFilter();
     private final JavaDynamicClassLoader classLoader;
     private final Map<String, Map<String, JavaFileObject>> dependencies;
 
@@ -60,13 +71,20 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
         this.dependencies = newConcurrentHashMap();
     }
     
-    
     /**
      * Add compile dependency
      * @param path Path
      */
     public void addDependency(Path path) {
-        // 待办 根据指定文件描述符添加编译管理器依赖
+        requireNotNull(path);
+        if (!exists(path)) {
+            throw new IllegalArgumentException(path.getFileName().toString() + " not exists!");
+        } else if (isFile(path) 
+                && (!isJavaClassFile(path) 
+                        || !isJarFile(path))) {
+            throw new IllegalArgumentException("Expect class file or jar file: " + path.getFileName().toString());
+        }
+        addDependencies(path);
     }
     
     /**
@@ -183,6 +201,23 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
     }
     
     /**
+     * Recurse add dependency
+     */
+    private void addDependencies(Path path) {
+        if (isDirectory(path)) {
+            List<Path> paths = listFile(path, filter, true);
+            paths.forEach(e -> addDependencies(e));
+        } else if (isJavaClassFile(path)) {
+            String className = getSimpleFileName(path.getFileName().toString());
+            addDependency(new JavaDynamicFile(className, path.toUri(), CLASS));
+        } else if (isJarFile(path)) {
+            Collection<JavaFileObject> resources = 
+                    loadJarResources(path, new JarResourceLoaderImpl(null, CLASS));
+            resources.forEach(e -> addDependency(e));
+        }
+    }
+    
+    /**
      * Get dependent java file
      */
     private JavaFileObject getDependency(Location location, String packageName, String relativeName) {
@@ -220,7 +255,17 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
         }).collect(Collectors.toList());
     }
     
-    
+
+    /**
+     * @author zhaoqingjiang
+     */
+    static class DependencyFilter implements Filter<Path> {
+
+        @Override
+        public boolean accept(Path path) throws IOException {
+            return isJavaClassFile(path) || isJarFile(path);
+        }
+    }
     
     /**
      * @author zhaoqingjiang
@@ -238,7 +283,9 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
         @Override
         public boolean fileEntry(URL url, JarFile file, JarEntry entry, String jarPath, String packageName,
                 String fileName, String fileExtension, Collection<JavaFileObject> collector) throws Exception {
-            if (kind.extension.equals(fileExtension) && this.packageName.equals(packageName)) {
+            if (kind.extension.equals(fileExtension) 
+                    && (this.packageName == null 
+                    || this.packageName.equals(packageName))) {
                 String sep = jarPath.endsWith(Jar_Extension) ? Jar_Entry_Sep : Path_Separator;
                 URI uri = URI.create(String.join(sep, jarPath, entry.getName()));
                 JavaDynamicFile jd = new JavaDynamicFile(String.join(Package_Separator, packageName, fileName), uri, kind);

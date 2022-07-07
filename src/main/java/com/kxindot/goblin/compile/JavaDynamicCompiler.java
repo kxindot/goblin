@@ -14,6 +14,7 @@ import static javax.tools.JavaFileObject.Kind.SOURCE;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -199,20 +200,18 @@ public interface JavaDynamicCompiler {
 
         @Override
         public JavaDynamicCompiler addDependency(String path) {
-            // 待办 JavaDynamicCompiler 添加编译依赖
-            return null;
+            return addDependency(Paths.get(path));
         }
 
         @Override
         public JavaDynamicCompiler addDependency(File dependency) {
-            // 待办 JavaDynamicCompiler 添加编译依赖
-            return null;
+            return addDependency(dependency.toPath());
         }
 
         @Override
         public JavaDynamicCompiler addDependency(Path dependency) {
-            // 待办 JavaDynamicCompiler 添加编译依赖
-            return null;
+            manager.addDependency(dependency);
+            return this;
         }
 
         @Override
@@ -239,7 +238,7 @@ public interface JavaDynamicCompiler {
                     map.put(key, cls);
                 }
             } catch (ClassNotFoundException e) {
-                // throw something just in case
+                // 以防万一
                 throw new JavaDynamicCompileException(e);
             }
             return map;
@@ -249,7 +248,7 @@ public interface JavaDynamicCompiler {
         private String getDiagnosticMessage() {
             List<Diagnostic<JavaFileObject>> list = DiagnosticCollector.class.cast(collector).getDiagnostics();
             if (isEmpty(list)) return null;
-            StringBuilder builder = new StringBuilder("\n");
+            StringBuilder builder = new StringBuilder();
             for (Diagnostic<JavaFileObject> diagnostic : list) {
                 JavaFileObject source = diagnostic.getSource();
                 if (source != null) {

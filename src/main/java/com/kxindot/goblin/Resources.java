@@ -6,9 +6,10 @@ import static com.kxindot.goblin.Classes.getAvailableClassLoader;
 import static com.kxindot.goblin.Classes.toPackagePattern;
 import static com.kxindot.goblin.Classes.toPathPattern;
 import static com.kxindot.goblin.IO.newIORuntimeException;
+import static com.kxindot.goblin.Objects.Colon;
+import static com.kxindot.goblin.Objects.Dot;
 import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.Exclamation;
-import static com.kxindot.goblin.Objects.isEmpty;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.newArrayList;
@@ -27,7 +28,6 @@ import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -41,7 +41,7 @@ import com.kxindot.goblin.IO.IORuntimeException;
 import com.kxindot.goblin.exception.RuntimeException;
 
 /**
- * @author zhaoqingjiang
+ * @author ZhaoQingJiang
  */
 public class Resources {
     
@@ -143,6 +143,150 @@ public class Resources {
         return (T) c;
     }
     
+    /**
+     * 
+     * @param <T>
+     * @param path
+     * @param loader
+     * @return
+     */
+    public static <T> Collection<T> loadJarResources(String path, JarLoader<T> loader) {
+        return loadJarResources(Paths.get(path), loader);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param file
+     * @param loader
+     * @return
+     */
+    public static <T> Collection<T> loadJarResources(File file, JarLoader<T> loader) {
+        return loadJarResources(file.toPath(), loader);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param path
+     * @param loader
+     * @return
+     */
+    public static <T> Collection<T> loadJarResources(Path path, JarLoader<T> loader) {
+        return loadJarResources(path.toUri(), loader);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param uri
+     * @param loader
+     * @return
+     */
+    public static <T> Collection<T> loadJarResources(URI uri, JarLoader<T> loader) {
+        URL url;
+        try {
+            url = uri.toURL();
+        } catch (MalformedURLException e) {
+            throw new ResourceLoadException(e);
+        }
+        return loadJarResources(url, loader);
+    }
+    
+    public static void main(String[] args) throws Exception {
+        String path = "/Users/zhaoqingjiang/Tmp/goblin-1.0.1-SNAPSHOT.jar";
+        loadJarResources(path, new JarLoader<String>() {
+
+            @Override
+            public boolean fileEntry(URL url, JarFile file, JarEntry entry, String jarPath, String packageName,
+                    String fileName, String fileExtension, Collection<String> collector) throws Exception {
+                System.out.printf("path : %s\npkg : %s\nname : %s\nextension : %s\n\n",
+                        jarPath, packageName, fileName, fileExtension);
+                return true;
+            }
+        });
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param url
+     * @param loader
+     * @return
+     */
+    public static <T> Collection<T> loadJarResources(URL url, JarLoader<T> loader) {
+        requireNotNull(loader);
+        String protocol = url.getProtocol();
+        if (!URL_Protocol_Jar.equals(protocol)) {
+            if (URL_Protocol_File.equals(protocol)
+                    && url.toExternalForm().endsWith(Jar_Extension)) {
+                try {
+                    url = new URL(URL_Protocol_Jar + Colon + url.toExternalForm() + Jar_Entry_Sep);
+                } catch (MalformedURLException e) {
+                    throw new ResourceLoadException(e);
+                }
+            } else {
+                throw new IllegalArgumentException("Input not represent a jar!");
+            }
+        }
+        
+        try {
+            JarFile file = JarURLConnection.class.cast(url.openConnection()).getJarFile();
+            return loadJarResources(url, file, loader);
+        } catch (Exception e) {
+            throw new ResourceLoadException(e, 
+                    "Error occurred when loading resources from jar : %s", url);
+        }
+    }
+    
+    /**
+     * 
+     */
+    private static <T> Collection<T> loadJarResources(URL url, JarFile file, JarLoader<T> loader) throws Exception {
+        Collection<T> c = newHashSet();
+        String form = url.toExternalForm();
+        String path = form.substring(0, form.lastIndexOf(Exclamation));
+        Enumeration<JarEntry> entries = file.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = (JarEntry) entries.nextElement();
+            String pkg = EMP;
+            String exs = EMP;
+            String name = entry.getName();
+            if (name.contains(Package_Separator)) {
+                exs = name.substring(name.lastIndexOf(Package_Separator));
+                name = name.substring(0, name.lastIndexOf(Package_Separator));
+            }
+            if (name.contains(Path_Separator)) {
+                pkg = toPackagePattern(name.substring(0, name.lastIndexOf(Path_Separator)));
+                name = name.substring(name.lastIndexOf(Path_Separator) + 1);
+            }
+            boolean nb = entry.isDirectory() 
+                    ? loader.directoryEntry(url, file, entry, path, pkg, c)
+                            : loader.fileEntry(url, file, entry, path, pkg, name, exs, c);
+            if (!nb) {
+                break;
+            }
+        }
+        return c;
+    }
+    
+    /**
+     * 
+     * @param file
+     * @return
+     */
+    public static boolean exists(File file) {
+        return file != null && file.exists();
+    }
+    
+    /**
+     * 
+     * @param path
+     * @return
+     */
+    public static boolean exists(Path path) {
+        return path != null && Files.exists(path);
+    }
     
     /**
      * 
@@ -260,7 +404,7 @@ public class Resources {
      * @return
      */
     public static boolean isJarFile(String jarPath) {
-        return isNotBlank(jarPath) && isJarFile(Paths.get(jarPath));
+        return isFile(jarPath) && jarPath.endsWith(Jar_Extension);
     }
     
     /**
@@ -269,7 +413,7 @@ public class Resources {
      * @return
      */
     public static boolean isJarFile(File file) {
-        return file != null && isJarFile(file.toURI());
+        return isFile(file) && file.getName().endsWith(Jar_Extension);
     }
     
     /**
@@ -278,16 +422,7 @@ public class Resources {
      * @return
      */
     public static boolean isJarFile(Path path) {
-        return path != null && isJarFile(path.toUri());
-    }
-    
-    /**
-     * 
-     * @param url
-     * @return
-     */
-    public static boolean isJarFile(URL url) {
-        return url != null && URL_Protocol_Jar.equals(url.getProtocol());
+        return isFile(path) && path.getFileName().toString().endsWith(Jar_Extension);
     }
     
     /**
@@ -299,10 +434,20 @@ public class Resources {
         try {
             return isJarFile(uri.toURL());
         } catch (MalformedURLException e) {
-            // Ignore MalformedURLException
-            String path = uri.getPath();
-            return path != null && path.startsWith(URL_Protocol_Jar);
+            throw new IllegalArgumentException("Invalid uri: " +  uri, e);
         }
+    }
+    
+    /**
+     * 
+     * @param url
+     * @return
+     */
+    public static boolean isJarFile(URL url) {
+        return url != null
+                && URL_Protocol_Jar.equals(url.getProtocol())
+                || (URL_Protocol_File.equals(url.getProtocol())
+                        && url.toExternalForm().endsWith(Jar_Extension));
     }
     
     /**
@@ -341,20 +486,52 @@ public class Resources {
         return isFile(path) && path.getFileName().toString().endsWith(CLASS.extension);
     }
     
+    /**
+     * Parse and get a file simple name.<br>
+     * e.g: input "/Users/Jack/Documents/Test.txt", then output "Test".
+     * @param fileName
+     * @return
+     */
+    public static String getSimpleFileName(String fileName) {
+        if (fileName.contains(File.separator)) {
+            fileName = fileName.substring(fileName.lastIndexOf(Path_Separator) + 1);
+        }
+        if (fileName.contains(Dot)) {
+            fileName = fileName.substring(0, fileName.lastIndexOf(Dot));
+        }
+        return fileName;
+    }
     
+    /**
+     * 
+     * @param file
+     * @return
+     */
     public static List<File> listFile(File file) {
         return listFile(file, null);
     }
     
-    
+    /**
+     * 
+     * @param file
+     * @param filter
+     * @return
+     */
     public static List<File> listFile(File file, FileFilter filter) {
         return listFile(file, filter, false);
     }
     
+    /**
+     * 
+     * @param file
+     * @param filter
+     * @param recurse
+     * @return
+     */
     public static List<File> listFile(File file, FileFilter filter, boolean recurse) {
         List<File> list = newArrayList();
         File[] files = file.listFiles();
-        if (isEmpty(files) 
+        if (files == null 
                 && (filter == null 
                 || filter.accept(file))) {
             list.add(file);
@@ -372,12 +549,15 @@ public class Resources {
     
     
     public static List<Path> listFile(String path) {
-        return listFile(path);
+        return listFile(path, null, false);
     }
     
+    public static List<Path> listFile(String path, boolean recurse) {
+        return listFile(path, null, recurse);
+    }
     
     public static List<Path> listFile(String path, Filter<Path> filter) {
-        return listFile(Paths.get(path), filter, false);
+        return listFile(path, filter, false);
     }
     
     
@@ -387,12 +567,17 @@ public class Resources {
     
     
     public static List<Path> listFile(URI uri) {
-        return listFile(uri, null);
+        return listFile(uri, null, false);
+    }
+    
+    
+    public static List<Path> listFile(URI uri, boolean recurse) {
+        return listFile(uri, null, recurse);
     }
     
     
     public static List<Path> listFile(URI uri, Filter<Path> filter) {
-        return listFile(Paths.get(uri), filter, false);
+        return listFile(uri, filter, false);
     }
     
     
@@ -402,7 +587,12 @@ public class Resources {
     
     
     public static List<Path> listFile(Path path) {
-        return listFile(path, null);
+        return listFile(path, null, false);
+    }
+    
+    
+    public static List<Path> listFile(Path path, boolean recurse) {
+        return listFile(path, null, recurse);
     }
     
     
@@ -413,6 +603,17 @@ public class Resources {
     
     public static List<Path> listFile(Path path, Filter<Path> filter, boolean recurse) {
         List<Path> list = newArrayList();
+        if (isFile(path)) {
+            try {
+                if (filter == null 
+                        || filter.accept(path)) {
+                    list.add(path);
+                }
+            } catch (IOException ex) {
+                throw newIORuntimeException(ex);
+            }
+            return list;
+        }
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             Iterator<Path> iterator = stream.iterator();
             while (iterator.hasNext()) {
@@ -423,33 +624,11 @@ public class Resources {
                     list.add(e);
                 }
             }
-        } catch (NotDirectoryException e) {
-            try {
-                if (filter != null && filter.accept(path)) {
-                    list.add(path);
-                }
-            } catch (IOException ex) {
-                throw newIORuntimeException(ex);
-            }
         } catch (IOException e) {
             throw newIORuntimeException(e);
         }
         return list;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -494,45 +673,11 @@ public class Resources {
         default Collection<T> loadFromProtocol(String protocol, URL url) throws Exception {return null;}
     }
     
+    
     /**
      * @author zhaoqingjiang
      */
-    public interface JarResourceLoader<T> extends ResourceLoaderAdapter<T> {
-        
-        @Override
-        default Collection<T> loadFromFile(URL url, Path path) throws Exception {
-            return null;
-        }
-        
-        @Override
-        default Collection<T> loadFromJarFile(URL url, JarFile file) throws Exception {
-            Collection<T> c = newHashSet();
-            String form = url.toExternalForm();
-            String path = form.substring(0, form.lastIndexOf(Exclamation));
-            Enumeration<JarEntry> entries = file.entries();
-            while (entries.hasMoreElements()) {
-                JarEntry entry = (JarEntry) entries.nextElement();
-                String pkg = EMP;
-                String exs = EMP;
-                String name = entry.getName();
-                if (name.contains(Package_Separator)) {
-                    exs = name.substring(name.lastIndexOf(Package_Separator));
-                    name = name.substring(0, name.lastIndexOf(Package_Separator));
-                }
-                if (name.contains(Path_Separator)) {
-                    pkg = toPackagePattern(name.substring(0, name.lastIndexOf(Path_Separator)));
-                    name = name.substring(name.lastIndexOf(Path_Separator) + 1);
-                }
-                boolean nb = entry.isDirectory() 
-                        ? directoryEntry(url, file, entry, path, pkg, c)
-                                : fileEntry(url, file, entry, path, pkg, name, exs, c);
-                if (!nb) {
-                    break;
-                }
-            }
-            return c;
-        }
-        
+    public interface JarLoader<T> {
         /**
          * Iterate JarFile when meet a JarEntry type is a file.
          * If this method return false, means break the JarFile iteration 
@@ -572,6 +717,24 @@ public class Resources {
                 String jarPath, String packageName, Collection<T> collector) throws Exception {
             return true;
         }
+    }
+    
+    
+    /**
+     * @author zhaoqingjiang
+     */
+    public interface JarResourceLoader<T> extends ResourceLoaderAdapter<T>, JarLoader<T> {
+        
+        @Override
+        default Collection<T> loadFromFile(URL url, Path path) throws Exception {
+            return null;
+        }
+        
+        @Override
+        default Collection<T> loadFromJarFile(URL url, JarFile file) throws Exception {
+            return loadJarResources(url, file, this);
+        }
+        
     }
     
     
