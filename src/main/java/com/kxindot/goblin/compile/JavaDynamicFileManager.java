@@ -138,8 +138,6 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
     @Override
     public FileObject getFileForInput(Location location, 
             String packageName, String relativeName) throws IOException {
-        System.out.printf("JavaDynamicFileManager.getFileForInput(): location = %s, "
-                + "packageName = %s, relativeName = %s\n", location, packageName, relativeName);
         FileObject file = getDependency(location, packageName, relativeName);
         if (file == null) {
             file = super.getFileForInput(location, packageName, relativeName);
@@ -150,8 +148,6 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
     @Override
     public JavaFileObject getJavaFileForOutput(Location location, 
             String className, Kind kind, FileObject sibling) throws IOException {
-        System.out.printf("JavaDynamicFileManager.getJavaFileForOutput(): "
-                + "location = %s, className = %s, kind = %s\n", location, className, kind);
         if (location == CLASS_OUTPUT) {
             JavaDynamicFile file = new JavaDynamicFile(className, kind);
             classLoader.register(file);
@@ -163,9 +159,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
     @Override
     public String inferBinaryName(Location location, JavaFileObject file) {
         if (file instanceof JavaDynamicFile) {
-            JavaDynamicFile jd = JavaDynamicFile.class.cast(file);
-            System.out.printf("JavaDynamicFileManager.inferBinaryName(): return = %s\n", jd.inferBinaryName());
-            return jd.inferBinaryName();
+            return JavaDynamicFile.class.cast(file).inferBinaryName();
         }
         return super.inferBinaryName(location, file);
     }
@@ -173,8 +167,6 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
     @Override
     public Iterable<JavaFileObject> list(Location location, String packageName, Set<Kind> kinds, boolean recurse)
             throws IOException {
-        System.out.printf("JavaDynamicFileManager.list(): location = %s, "
-                + "packageName = %s, kinds = %s, recurse = %s\n", location, packageName, kinds, recurse);
         List<JavaFileObject> list = newArrayList(super.list(location, packageName, kinds, recurse));
         if (location == SOURCE_PATH && kinds.contains(SOURCE)) {
             list.addAll(getDependencies(location, packageName));
@@ -246,14 +238,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
         @Override
         public boolean fileEntry(URL url, JarFile file, JarEntry entry, String jarPath, String packageName,
                 String fileName, String fileExtension, Collection<JavaFileObject> collector) throws Exception {
-            System.err.printf("加载Jar包资源, 待加载包名: %s, 文件类型: %s, 查找到文件-> "
-                    + "\n\tjarPath = %s"
-                    + "\n\tpackageName = %s"
-                    + "\n\tfileName = %s"
-                    + "\n\tfileExtension = %s"
-                    + "\n\n", this.packageName, kind.extension, jarPath, packageName, fileName, fileExtension);
-            if (kind.extension.equals(fileExtension)
-                    && this.packageName.equals(packageName)) {
+            if (kind.extension.equals(fileExtension) && this.packageName.equals(packageName)) {
                 String sep = jarPath.endsWith(Jar_Extension) ? Jar_Entry_Sep : Path_Separator;
                 URI uri = URI.create(String.join(sep, jarPath, entry.getName()));
                 JavaDynamicFile jd = new JavaDynamicFile(String.join(Package_Separator, packageName, fileName), uri, kind);
