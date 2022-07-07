@@ -33,5 +33,4 @@ com.kxindot.goblin.typeconvert.impl.ObjectToShortConverter
 com.kxindot.goblin.typeconvert.impl.ObjectToStringConverter
 
 com.kxindot.goblin.typeconvert.impl.SqlDateToDateConverter
-
 com.kxindot.goblin.typeconvert.impl.SqlTimestampToDateConverter

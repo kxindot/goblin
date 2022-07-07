@@ -27,7 +27,7 @@ public abstract class Notation {
     public boolean equals(Object obj) {
         if (obj == this) return true;
         if (null != obj && obj instanceof Notation) {
-            return Objects.equals(notation, ((Notation) obj).notation);
+            return Objects.isEqual(notation, ((Notation) obj).notation);
         }
         return false;
     }
