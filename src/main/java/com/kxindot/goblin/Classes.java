@@ -1,11 +1,10 @@
 package com.kxindot.goblin;
 
+import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.newHashMap;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Resources.isJarFile;
-import static com.kxindot.goblin.Symbol.Empty;
-import static com.kxindot.goblin.Symbol.Slash;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,7 +115,7 @@ public final class Classes {
      * @return boolean
      */
     public static boolean isPackaged(ClassLoader classLoader) {
-        return isJarFile(classLoader.getResource(Slash));
+        return isJarFile(classLoader.getResource(Path_Separator));
     }
     
     /**
@@ -261,7 +260,7 @@ public final class Classes {
      * @return String
      */
     public static String toPathPattern(String className) {
-        String ext = Empty;
+        String ext = EMP;
         String name = className;
         if (name.endsWith(Java_Class_Extension)) {
             ext = Java_Class_Extension;
@@ -271,6 +270,15 @@ public final class Classes {
             name = name.substring(0, name.lastIndexOf(ext));
         }
         return name.replaceAll(ESC_Regex_Dot, Path_Separator) + ext;
+    }
+    
+    /**
+     * 将路径名转化为包名模式,如com/kxindot/goblin/Test转化为com.kxindot.goblin.Test
+     * @param path String
+     * @return String
+     */
+    public static String toPackagePattern(String path) {
+        return path.replaceAll(Path_Separator, Package_Separator);
     }
     
     /**

@@ -1,17 +1,19 @@
 package com.kxindot.goblin;
 
+import static com.kxindot.goblin.Classes.Package_Separator;
+import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.getAvailableClassLoader;
+import static com.kxindot.goblin.Classes.toPackagePattern;
+import static com.kxindot.goblin.Classes.toPathPattern;
 import static com.kxindot.goblin.IO.newIORuntimeException;
+import static com.kxindot.goblin.Objects.EMP;
+import static com.kxindot.goblin.Objects.Exclamation;
 import static com.kxindot.goblin.Objects.isEmpty;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotNull;
-import static com.kxindot.goblin.Symbol.Dot;
-import static com.kxindot.goblin.Symbol.EM;
-import static com.kxindot.goblin.Symbol.Empty;
-import static com.kxindot.goblin.Symbol.Slash;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
@@ -112,8 +114,8 @@ public class Resources {
             ResourceLoader<T> loader, ClassLoader classLoader) {
         requireNotNull(loader, "loader == null");
         packageName = requireNotNull(packageName, "packageName == null").trim();
-        if (isNotBlank(packageName) && packageName.contains(Dot)) {
-            packageName = packageName.replaceAll("\\.", Slash);
+        if (isNotBlank(packageName) && packageName.contains(Package_Separator)) {
+            packageName = toPathPattern(packageName);
         }
         if (classLoader == null) {
             classLoader = getAvailableClassLoader();
@@ -492,16 +494,6 @@ public class Resources {
         default Collection<T> loadFromProtocol(String protocol, URL url) throws Exception {return null;}
     }
     
-    public static void main(String[] args) throws MalformedURLException {
-        URL url = new URL("jar:file:/Users/zhaoqingjiang/.env/local/eclipse/jee.2022.06.m1.rc"
-                + "/Workspace/zto/scf2-infrastructure/scf2-integration/target"
-                + "/scf2-integration-1.0.0-SNAPSHOT.jar!/BOOT-INF/classes!/com/zto/scf2/integration/spl");
-        String form = url.toExternalForm();
-        System.out.println(form);
-        String path = form.substring(0, form.lastIndexOf(EM));
-        System.out.println(path);
-    }
-    
     /**
      * @author zhaoqingjiang
      */
@@ -516,20 +508,20 @@ public class Resources {
         default Collection<T> loadFromJarFile(URL url, JarFile file) throws Exception {
             Collection<T> c = newHashSet();
             String form = url.toExternalForm();
-            String path = form.substring(0, form.lastIndexOf(EM));
+            String path = form.substring(0, form.lastIndexOf(Exclamation));
             Enumeration<JarEntry> entries = file.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = (JarEntry) entries.nextElement();
-                String pkg = Empty;
-                String exs = Empty;
+                String pkg = EMP;
+                String exs = EMP;
                 String name = entry.getName();
-                if (name.contains(Dot)) {
-                    exs = name.substring(name.lastIndexOf(Dot));
-                    name = name.substring(0, name.lastIndexOf(Dot));
+                if (name.contains(Package_Separator)) {
+                    exs = name.substring(name.lastIndexOf(Package_Separator));
+                    name = name.substring(0, name.lastIndexOf(Package_Separator));
                 }
-                if (name.contains(Slash)) {
-                    pkg = name.substring(0, name.lastIndexOf(Slash)).replaceAll(Slash, Dot);
-                    name = name.substring(name.lastIndexOf(Slash) + 1);
+                if (name.contains(Path_Separator)) {
+                    pkg = toPackagePattern(name.substring(0, name.lastIndexOf(Path_Separator)));
+                    name = name.substring(name.lastIndexOf(Path_Separator) + 1);
                 }
                 boolean nb = entry.isDirectory() 
                         ? directoryEntry(url, file, entry, path, pkg, c)

@@ -164,6 +164,73 @@ public final class Objects {
     
     /**-------------------字符串-------------------**/
     
+    /** 空字符串（empty）*/
+    public static final String EMP = "";
+    /** 空格（white space）*/
+    public static final String WS = " ";
+    /** 制表符（tab）：\t  */
+    public static final String TAB = "\t";
+    /** 换行符（line feed）：\n */
+    public static final String LF = "\n";
+    /** 退格符（backspace）：\b */
+    public static final String BS = "\b";
+    /** 回车符（carriage return）：\r */
+    public static final String CR = "\r";
+    /** 换页符（form feed）：\f */
+    public static final String FF = "\f";
+    /** 正斜杠：/ */
+    public static final String Slash = "/";
+    /** 反斜杠：\ */
+    public static final String Backslash = "\\";
+    /** 点：. */
+    public static final String Dot = ".";
+    /** 逗号：, */
+    public static final String Comma = ",";
+    /** 冒号：: */
+    public static final String Colon = ":";
+    /** 分号：; */
+    public static final String Semicolon = ";";
+    /** 短横杠：- */
+    public static final String Hyphen = "-";
+    /** 星号：* */
+    public static final String Asterisk = "*";
+    /** 百分号：% */
+    public static final String Percent = "%";
+    /** 加号：+ */
+    public static final String Cross = "+";
+    /** 问号：? */
+    public static final String Question = "?";
+    /** 感叹号：! */
+    public static final String Exclamation = "!";
+    /** 等号：= */
+    public static final String EqualSign = "=";
+    /** 竖线：| */
+    public static final String VerticalLine = "|";
+    /** 美元符号：$ */
+    public static final String DollarSign = "$";
+    /** at：@ */
+    public static final String AtSign = "@";
+    /** 井号：# */
+    public static final String HashSign = "#";
+    /** and：& */
+    public static final String AndSign = "&";
+    /** 左圆括号（left parenthesis）：( */
+    public static final String LP = "(";
+    /** 右圆括号（right parenthesis）：) */
+    public static final String RP = ")";
+    /** 左中括号（left curly brace）：{ */
+    public static final String LCB = "{";
+    /** 右中括号（right curly brace）：} */
+    public static final String RCB = "}";
+    /** 左大括号（left square bracket）：[ */
+    public static final String LSB = "[";
+    /** 右大括号（right square bracket）：] */
+    public static final String RSB = "]";
+    /** 左尖括号/小于符号（left angle bracket）：< */
+    public static final String LAB = "<";
+    /** 右尖括号/大于符号（right angle bracket）：> */
+    public static final String RAB = ">";
+    
     /**
      * 判断传入参数是否 <b><i>等于</i></b> null或""
      * @param cs CharSequence

@@ -44,7 +44,7 @@ public class JavaDynamicFile implements JavaFileObject {
     private ByteArrayOutputStream stream;
     
     protected JavaDynamicFile(String className, Kind kind) {
-        this(className, uri(className, kind), kind);
+        this(className, uri(toPathPattern(className), kind), kind);
         this.immutable = false;
     }
     
@@ -96,7 +96,8 @@ public class JavaDynamicFile implements JavaFileObject {
     }
     
     public String inferBinaryName() {
-        return isBlank(packageName) ? simpleName : String.join(Package_Separator, packageName, simpleName);
+        return isBlank(packageName) ? simpleName 
+                : String.join(Package_Separator, packageName, simpleName);
     }
     
     @Override
@@ -124,9 +125,10 @@ public class JavaDynamicFile implements JavaFileObject {
 
     @Override
     public OutputStream openOutputStream() throws IOException {
-        if (immutable || stream != null) {
+        if (immutable) {
             throw new UnsupportedOperationException();
         }
+        immutable = true;
         return stream = new ByteArrayOutputStream();
     }
 
@@ -136,7 +138,7 @@ public class JavaDynamicFile implements JavaFileObject {
         if (charContent == null)
             throw new UnsupportedOperationException();
         if (charContent instanceof CharBuffer) {
-            CharBuffer buffer = (CharBuffer)charContent;
+            CharBuffer buffer = (CharBuffer) charContent;
             if (buffer.hasArray())
                 return new CharArrayReader(buffer.array());
         }
@@ -152,7 +154,7 @@ public class JavaDynamicFile implements JavaFileObject {
     public Writer openWriter() throws IOException {
         throw new UnsupportedOperationException();
     }
-
+    
     @Override
     public long getLastModified() {return 0L;}
 
@@ -264,6 +266,5 @@ public class JavaDynamicFile implements JavaFileObject {
         }
         return kind;
     }
-    
-    
+
 }

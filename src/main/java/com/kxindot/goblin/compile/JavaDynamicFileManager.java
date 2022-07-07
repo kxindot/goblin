@@ -1,6 +1,9 @@
 package com.kxindot.goblin.compile;
 
+import static com.kxindot.goblin.Classes.Package_Separator;
+import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.isPackaged;
+import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
 import static com.kxindot.goblin.Objects.requireNotBlank;
@@ -8,9 +11,6 @@ import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Resources.Jar_Entry_Sep;
 import static com.kxindot.goblin.Resources.Jar_Extension;
 import static com.kxindot.goblin.Resources.loadResources;
-import static com.kxindot.goblin.Symbol.Dot;
-import static com.kxindot.goblin.Symbol.Empty;
-import static com.kxindot.goblin.Symbol.Slash;
 import static com.kxindot.goblin.compile.JavaDynamicClassLoader.classLoader;
 import static com.kxindot.goblin.compile.JavaDynamicClassLoader.defaultClassLoader;
 import static javax.tools.JavaFileObject.Kind.CLASS;
@@ -74,7 +74,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
      * @param file JavaFileObject
      */
     public void addDependency(JavaFileObject file) {
-        String packageName = Empty;
+        String packageName = EMP;
         String relativeName = file.getName();
         if (file instanceof JavaDynamicFile) {
             JavaDynamicFile jd = JavaDynamicFile.class.cast(file);
@@ -90,7 +90,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
      * @param file JavaFileObject
      */
     public void addDependency(String relativeName, JavaFileObject file) {
-        String packageName = Empty;
+        String packageName = EMP;
         if (file instanceof JavaDynamicFile) {
             packageName = JavaDynamicFile.class.cast(file).getPackageName();
         }
@@ -124,7 +124,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
      */
     public JavaFileObject getDependency(String packageName, String relativeName) {
         if (packageName == null) {
-            packageName = Empty;
+            packageName = EMP;
         }
         requireNotBlank(relativeName);
         return getDependencies(packageName).get(relativeName);
@@ -254,9 +254,9 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
                     + "\n\n", this.packageName, kind.extension, jarPath, packageName, fileName, fileExtension);
             if (kind.extension.equals(fileExtension)
                     && this.packageName.equals(packageName)) {
-                String sep = jarPath.endsWith(Jar_Extension) ? Jar_Entry_Sep : Slash;
+                String sep = jarPath.endsWith(Jar_Extension) ? Jar_Entry_Sep : Path_Separator;
                 URI uri = URI.create(String.join(sep, jarPath, entry.getName()));
-                JavaDynamicFile jd = new JavaDynamicFile(String.join(Dot, packageName, fileName), uri, kind);
+                JavaDynamicFile jd = new JavaDynamicFile(String.join(Package_Separator, packageName, fileName), uri, kind);
                 collector.add(jd);
             }
             return true;
