@@ -193,20 +193,6 @@ public class Resources {
         return loadJarResources(url, loader);
     }
     
-    public static void main(String[] args) throws Exception {
-        String path = "/Users/zhaoqingjiang/Tmp/goblin-1.0.1-SNAPSHOT.jar";
-        loadJarResources(path, new JarLoader<String>() {
-
-            @Override
-            public boolean fileEntry(URL url, JarFile file, JarEntry entry, String jarPath, String packageName,
-                    String fileName, String fileExtension, Collection<String> collector) throws Exception {
-                System.out.printf("path : %s\npkg : %s\nname : %s\nextension : %s\n\n",
-                        jarPath, packageName, fileName, fileExtension);
-                return true;
-            }
-        });
-    }
-    
     /**
      * 
      * @param <T>
@@ -445,9 +431,9 @@ public class Resources {
      */
     public static boolean isJarFile(URL url) {
         return url != null
-                && URL_Protocol_Jar.equals(url.getProtocol())
+                && (URL_Protocol_Jar.equals(url.getProtocol())
                 || (URL_Protocol_File.equals(url.getProtocol())
-                        && url.toExternalForm().endsWith(Jar_Extension));
+                        && url.toExternalForm().endsWith(Jar_Extension)));
     }
     
     /**
