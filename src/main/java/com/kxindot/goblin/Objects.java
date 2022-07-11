@@ -26,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.map.CaseInsensitiveConcurrentHashMap;
 import com.kxindot.goblin.map.CaseInsensitiveHashMap;
 import com.kxindot.goblin.map.CaseInsensitiveLinkedHashMap;
@@ -49,7 +50,7 @@ public final class Objects {
      * @param b Object
      * @return - 若传入的两个参数相等则返回true,反之false
      */
-    public static boolean equals(Object a, Object b) {
+    public static boolean isEqual(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
     }
     
@@ -162,6 +163,73 @@ public final class Objects {
     }
     
     /**-------------------字符串-------------------**/
+    
+    /** 空字符串（empty）*/
+    public static final String EMP = "";
+    /** 空格（white space）*/
+    public static final String WS = " ";
+    /** 制表符（tab）：\t  */
+    public static final String TAB = "\t";
+    /** 换行符（line feed）：\n */
+    public static final String LF = "\n";
+    /** 退格符（backspace）：\b */
+    public static final String BS = "\b";
+    /** 回车符（carriage return）：\r */
+    public static final String CR = "\r";
+    /** 换页符（form feed）：\f */
+    public static final String FF = "\f";
+    /** 正斜杠：/ */
+    public static final String Slash = "/";
+    /** 反斜杠：\ */
+    public static final String Backslash = "\\";
+    /** 点：. */
+    public static final String Dot = ".";
+    /** 逗号：, */
+    public static final String Comma = ",";
+    /** 冒号：: */
+    public static final String Colon = ":";
+    /** 分号：; */
+    public static final String Semicolon = ";";
+    /** 短横杠：- */
+    public static final String Hyphen = "-";
+    /** 星号：* */
+    public static final String Asterisk = "*";
+    /** 百分号：% */
+    public static final String Percent = "%";
+    /** 加号：+ */
+    public static final String Cross = "+";
+    /** 问号：? */
+    public static final String Question = "?";
+    /** 感叹号：! */
+    public static final String Exclamation = "!";
+    /** 等号：= */
+    public static final String EqualSign = "=";
+    /** 竖线：| */
+    public static final String VerticalLine = "|";
+    /** 美元符号：$ */
+    public static final String DollarSign = "$";
+    /** at：@ */
+    public static final String AtSign = "@";
+    /** 井号：# */
+    public static final String HashSign = "#";
+    /** and：& */
+    public static final String AndSign = "&";
+    /** 左圆括号（left parenthesis）：( */
+    public static final String LP = "(";
+    /** 右圆括号（right parenthesis）：) */
+    public static final String RP = ")";
+    /** 左中括号（left curly brace）：{ */
+    public static final String LCB = "{";
+    /** 右中括号（right curly brace）：} */
+    public static final String RCB = "}";
+    /** 左大括号（left square bracket）：[ */
+    public static final String LSB = "[";
+    /** 右大括号（right square bracket）：] */
+    public static final String RSB = "]";
+    /** 左尖括号/小于符号（left angle bracket）：< */
+    public static final String LAB = "<";
+    /** 右尖括号/大于符号（right angle bracket）：> */
+    public static final String RAB = ">";
     
     /**
      * 判断传入参数是否 <b><i>等于</i></b> null或""
@@ -313,6 +381,29 @@ public final class Objects {
         return true;
     }
     
+    /**
+     * 字符串截取<br>
+     * 截取匹配两字符串的中间字串,并返回,且只返回从左到右的首次匹配值.
+     * @param str 字符串
+     * @param open 待截取的子串之前的字符串,可为null 
+     * @param close 待截取的子串之后的字符串,可为null
+     * @return 截取的字符串(若无匹配则返回null)
+     */
+    public static String substringBetween(String str, String open, String close) {
+        String subStr = null;
+        if (str != null && open != null && close != null) {
+            int openIndex = str.indexOf(open);
+            if (openIndex != -1) {
+                openIndex += open.length();
+                int closeIndex = str.indexOf(close, openIndex);
+                if (closeIndex != -1) {
+                    subStr = str.substring(openIndex, closeIndex);
+                }
+            }
+        }
+        return subStr;
+    }
+    
     /**-------------------断言-------------------**/
     
     /**
@@ -322,7 +413,7 @@ public final class Objects {
      * @throws IllegalArgumentException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNull(T obj) {
-        return requireNotNull(obj, "obj require to be null");
+        return requireNotNull(obj, "input object require to be null");
     }
     
     /**
@@ -346,7 +437,7 @@ public final class Objects {
      * @throws IllegalArgumentException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNotNull(T obj) {
-        return requireNotNull(obj, "obj require not to be null");
+        return requireNotNull(obj, "input object require not to be null");
     }
     
     /**
@@ -354,11 +445,11 @@ public final class Objects {
      * @param obj 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws NullPointerException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNotNull(T obj, String message) {
         if (obj == null) {
-            throw new IllegalArgumentException(message);
+            throw new NullPointerException(message);
         }
         return obj;
     }
@@ -367,10 +458,10 @@ public final class Objects {
      * 断言字符串不等于null且不等于""
      * @param cs 断言对象
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotEmpty(T cs) {
-        return requireNotEmpty(cs, "input string require not be empty");
+        return requireNotEmpty(cs, "input charsequence require not be null or empty");
     }
     
     /**
@@ -378,11 +469,11 @@ public final class Objects {
      * @param cs 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotEmpty(T cs, String message) {
         if (isEmpty(cs)) {
-            throw new IllegalArgumentException(message);
+            throw new BlankCharSequenceException(message);
         }
         return cs;
     }
@@ -391,10 +482,10 @@ public final class Objects {
      * 断言字符串不等于null且不是空字符串
      * @param cs 断言对象
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotBlank(T cs) {
-        return requireNotBlank(cs, "input string require not be blank");
+        return requireNotBlank(cs, "input charsequence require not be null or blank");
     }
     
     /**
@@ -402,11 +493,11 @@ public final class Objects {
      * @param cs 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotBlank(T cs, String message) {
         if (isBlank(cs)) {
-            throw new IllegalArgumentException(message);
+            throw new BlankCharSequenceException(message);
         }
         return cs;
     }
@@ -415,10 +506,10 @@ public final class Objects {
      * 断言数组不等于null且length > 0
      * @param a 断言对象
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <T> T[] requireNotEmpty(T[] a) {
-        return requireNotEmpty(a, "array require not be null or empty");
+        return requireNotEmpty(a, "input array require not be null or empty");
     }
     
     /**
@@ -426,11 +517,11 @@ public final class Objects {
      * @param a 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <T> T[] requireNotEmpty(T[] a, String message) {
         if (isEmpty(a)) {
-            throw new IllegalArgumentException(message);
+            throw new EmptyCollectionException(message);
         }
         return a;
     }
@@ -439,10 +530,10 @@ public final class Objects {
      * 断言集合不等于null且size > 0
      * @param c 断言对象
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <C extends Collection<?>> C requireNotEmpty(C c) {
-        return requireNotEmpty(c, "collection require not be null or empty");
+        return requireNotEmpty(c, "input collection require not be null or empty");
     }
     
     /**
@@ -450,11 +541,11 @@ public final class Objects {
      * @param c 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <C extends Collection<?>> C requireNotEmpty(C c, String message) {
         if (isEmpty(c)) {
-            throw new IllegalArgumentException(message);
+            throw new EmptyCollectionException(message);
         }
         return c;
     }
@@ -463,10 +554,10 @@ public final class Objects {
      * 断言Map不等于null且size > 0
      * @param m 断言对象
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <M extends Map<?, ?>> M requireNotEmpty(M map) {
-        return requireNotEmpty(map, "map require not be null or empty");
+        return requireNotEmpty(map, "input map require not be null or empty");
     }
     
     /**
@@ -474,11 +565,11 @@ public final class Objects {
      * @param m 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <M extends Map<?, ?>> M requireNotEmpty(M map, String message) {
         if (isEmpty(map)) {
-            throw new IllegalArgumentException(message);
+            throw new EmptyCollectionException(message);
         }
         return map;
     }
@@ -507,6 +598,52 @@ public final class Objects {
         if (!expression) {
             throw new IllegalArgumentException(message);
         }
+    }
+    
+    
+    /**
+     * 空字符串警告异常(字符串为null或空串)
+     * @author zhaoqingjiang
+     */
+    public static class BlankCharSequenceException extends RuntimeException {
+
+        private static final long serialVersionUID = -479895746434262540L;
+
+        public BlankCharSequenceException() {
+            super();
+        }
+        
+        public BlankCharSequenceException(String message) {
+            super(message);
+        }
+
+        public BlankCharSequenceException(String message, Object... args) {
+            super(message, args);
+        }
+
+    }
+    
+    
+    /**
+     * 空集合警告异常
+     * @author zhaoqingjiang
+     */
+    public static class EmptyCollectionException extends RuntimeException {
+
+        private static final long serialVersionUID = -5910822621584176391L;
+
+        public EmptyCollectionException() {
+            super();
+        }
+        
+        public EmptyCollectionException(String message) {
+            super(message);
+        }
+
+        public EmptyCollectionException(String message, Object... args) {
+            super(message, args);
+        }
+
     }
     
     /**-------------------Class-------------------**/
@@ -639,37 +776,41 @@ public final class Objects {
     }
     
     /**
-     * 判断数组是否包含元素
-     * @param a A[] 数组
-     * @param e A 元素
+     * 判断数组内是否包含指定元素
+     * @param as A[] 数组
+     * @param a A 元素
      * @return - 若包含元素则返回true,反之false
      */
-    public static <A> boolean contains(A[] a, A e) {
-        return Comparable.class.isInstance(e) 
-                ? Arrays.binarySearch(a, e, null) >= 0
-                : Arrays.stream(a).filter(t -> equals(t, e)).findFirst().isPresent();
+    public static <A> boolean contains(A[] as, A a) {
+        if (Comparable.class.isInstance(a)) {
+            return Arrays.binarySearch(as, a, null) >= 0;
+        }
+        for (A e : as) {
+            if (isEqual(e, a)) return true;
+        }
+        return false;
     }
     
     /**
      * 判断数组是否包含元素
-     * @param a A[] 数组
-     * @param e A 元素
+     * @param as A[] 数组
+     * @param a A 元素
      * @param c {@link Comparator} 比较器
      * @return - 若包含元素则返回true,反之false
      */
-    public static <A> boolean contains(A[] a, A e, Comparator<A> c) {
-        return Arrays.binarySearch(a, e, c) >= 0;
+    public static <A> boolean contains(A[] as, A a, Comparator<A> c) {
+        return Arrays.binarySearch(as, a, c) >= 0;
     }
     
     /**
-     * 判断数组是否包含元素
-     * @param a A[] 数组
-     * @param e B 元素
-     * @param c {@link Comparate} 比较器
+     * 判断数组a内是否包含指定元素b
+     * @param as A[] 数组
+     * @param b B 元素
+     * @param c {@link Comparater} 比较器
      * @return - 若包含元素则返回true,反之false
      */
-    public static <A, B> boolean contains(A[] a, B e, Comparate<A, B> c) {
-        return binarySearch0(a, 0, a.length, e, c) >= 0;
+    public static <A, B> boolean contains(A[] as, B b, Comparater<A, B> c) {
+        return binarySearch0(as, 0, as.length, b, c) >= 0;
     }
     
     /**
@@ -677,12 +818,12 @@ public final class Objects {
      * @author ZhaoQingJiang
      */
     @FunctionalInterface
-    public interface Comparate<A, B> {int compare(A a, B b);}
+    public interface Comparater<A, B> {int compare(A a, B b);}
     
     /**
-     * 使用Comparate接口对数组进行二分查找
+     * 使用Comparater接口对数组进行二分查找
      */
-    private static <A, B> int binarySearch0(A[] a, int fromIndex, int toIndex, B k, Comparate<A, B> c) {
+    private static <A, B> int binarySearch0(A[] a, int fromIndex, int toIndex, B k, Comparater<A, B> c) {
         int low = fromIndex;
         int high = toIndex - 1;
         while (low <= high) {
@@ -784,9 +925,15 @@ public final class Objects {
         return new ArrayList<>(capacity);
     }
     
-    public static <T> List<T> newArrayList(T[] array) {
-        List<T> list = newArrayList(array.length);
-        Stream.of(array).forEach(e -> list.add(e));
+    @SafeVarargs
+    public static <T> List<T> newArrayList(T... array) {
+        requireNotNull(array);
+        return newArrayList(Arrays.asList(array));
+    }
+    
+    public static <T> List<T> newArrayList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(t -> list.add(t));
         return list;
     }
     
@@ -810,8 +957,10 @@ public final class Objects {
         return new LinkedList<>();
     }
     
-    public static <T> List<T> newLinkedList(T[] array) {
-        List<T> list = newArrayList(array.length);
+    @SafeVarargs
+    public static <T> List<T> newLinkedList(T... array) {
+        requireNotNull(array);
+        List<T> list = new LinkedList<>();
         Stream.of(array).forEach(e -> list.add(e));
         return list;
     }
@@ -828,8 +977,10 @@ public final class Objects {
         return new HashSet<>(capacity);
     }
     
-    public static <T> Set<T> newHashSet(T[] array) {
-        Set<T> set = newHashSet(array.length);
+    @SafeVarargs
+    public static <T> Set<T> newHashSet(T... array) {
+        requireNotNull(array);
+        Set<T> set = newHashSet(Math.max((int) (array.length/.75f) + 1, 16));
         Stream.of(array).forEach(e -> set.add(e));
         return set;
     }
@@ -868,6 +1019,15 @@ public final class Objects {
     
     public static <T> Set<T> newUnmodifiedSet(Collection<T> collection) {
         return Collections.unmodifiableSet(newHashSet(collection));
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <T> void addAll(Collection<T> collection, T... elements) {
+        collection.addAll(Arrays.asList(elements));
+    }
+    
+    public static <T> void addAll(Collection<T> collection, Collection<T> elements) {
+        collection.addAll(elements);
     }
     
     /**------------------Map------------------**/
