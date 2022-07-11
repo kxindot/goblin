@@ -1,7 +1,5 @@
 package com.kxindot.goblin.calculator.notation;
 
-import java.math.BigDecimal;
-import java.util.Stack;
 import java.util.function.BinaryOperator;
 
 import com.kxindot.goblin.Objects;
@@ -12,6 +10,7 @@ import com.kxindot.goblin.Objects;
  */
 public abstract class Operator<T> extends Notation {
 
+    @SuppressWarnings("unused")
     private BinaryOperator<Object> operator;
     
     public Operator(String notation, BinaryOperator<Object> operator) {
