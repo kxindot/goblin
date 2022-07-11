@@ -82,7 +82,8 @@ public class JavaDynamicClassLoader extends ClassLoader {
         if (CLASS != file.getKind()) {
             throw new IllegalArgumentException("Invalid Java File Kind : " + file.getKind());
         }
-        String name = file.getName();
+        String name = file instanceof JavaDynamicFile 
+                ? JavaDynamicFile.class.cast(file).inferBinaryName() : file.getName();
         if (name.endsWith(CLASS.extension)) {
             name = name.substring(0, name.lastIndexOf(CLASS.extension));
         }
