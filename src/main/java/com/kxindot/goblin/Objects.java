@@ -212,7 +212,7 @@ public final class Objects {
     public static final String AtSign = "@";
     /** 井号：# */
     public static final String HashSign = "#";
-    /** and：& */
+    /** and：{@code &} */
     public static final String AndSign = "&";
     /** 左圆括号（left parenthesis）：( */
     public static final String LP = "(";
@@ -226,9 +226,9 @@ public final class Objects {
     public static final String LSB = "[";
     /** 右大括号（right square bracket）：] */
     public static final String RSB = "]";
-    /** 左尖括号/小于符号（left angle bracket）：< */
+    /** 左尖括号/小于符号（left angle bracket）：{@code <} */
     public static final String LAB = "<";
-    /** 右尖括号/大于符号（right angle bracket）：> */
+    /** 右尖括号/大于符号（right angle bracket）：{@code >} */
     public static final String RAB = ">";
     
     /**

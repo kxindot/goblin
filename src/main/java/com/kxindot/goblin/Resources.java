@@ -144,44 +144,40 @@ public class Resources {
     }
     
     /**
-     * 
-     * @param <T>
-     * @param path
-     * @param loader
-     * @return
+     * 加载Jar中的资源
+     * @param path Jar路径
+     * @param loader 自定义加载器
+     * @return {@code Collection<T>}
      */
     public static <T> Collection<T> loadJarResources(String path, JarLoader<T> loader) {
         return loadJarResources(Paths.get(path), loader);
     }
     
     /**
-     * 
-     * @param <T>
-     * @param file
-     * @param loader
-     * @return
+     * 加载Jar中的资源
+     * @param file Jar文件
+     * @param loader 自定义加载器
+     * @return {@code Collection<T>}
      */
     public static <T> Collection<T> loadJarResources(File file, JarLoader<T> loader) {
         return loadJarResources(file.toPath(), loader);
     }
     
     /**
-     * 
-     * @param <T>
-     * @param path
-     * @param loader
-     * @return
+     * 加载Jar中的资源
+     * @param path Jar文件
+     * @param loader 自定义加载器
+     * @return {@code Collection<T>}
      */
     public static <T> Collection<T> loadJarResources(Path path, JarLoader<T> loader) {
         return loadJarResources(path.toUri(), loader);
     }
     
     /**
-     * 
-     * @param <T>
-     * @param uri
-     * @param loader
-     * @return
+     * 加载Jar中的资源
+     * @param uri URI
+     * @param loader 自定义加载器
+     * @return {@code Collection<T>}
      */
     public static <T> Collection<T> loadJarResources(URI uri, JarLoader<T> loader) {
         URL url;
@@ -193,26 +189,11 @@ public class Resources {
         return loadJarResources(url, loader);
     }
     
-    public static void main(String[] args) throws Exception {
-        String path = "/Users/zhaoqingjiang/Tmp/goblin-1.0.1-SNAPSHOT.jar";
-        loadJarResources(path, new JarLoader<String>() {
-
-            @Override
-            public boolean fileEntry(URL url, JarFile file, JarEntry entry, String jarPath, String packageName,
-                    String fileName, String fileExtension, Collection<String> collector) throws Exception {
-                System.out.printf("path : %s\npkg : %s\nname : %s\nextension : %s\n\n",
-                        jarPath, packageName, fileName, fileExtension);
-                return true;
-            }
-        });
-    }
-    
     /**
-     * 
-     * @param <T>
-     * @param url
-     * @param loader
-     * @return
+     * 加载Jar包中的资源
+     * @param url URL
+     * @param loader 自定义加载器
+     * @return {@code Collection<T>}
      */
     public static <T> Collection<T> loadJarResources(URL url, JarLoader<T> loader) {
         requireNotNull(loader);
@@ -240,7 +221,7 @@ public class Resources {
     }
     
     /**
-     * 
+     * 加载Jar包中的资源
      */
     private static <T> Collection<T> loadJarResources(URL url, JarFile file, JarLoader<T> loader) throws Exception {
         Collection<T> c = newHashSet();
@@ -271,54 +252,54 @@ public class Resources {
     }
     
     /**
-     * 
-     * @param file
-     * @return
+     * 判断文件/文件夹是否存在
+     * @param file File
+     * @return boolean
      */
     public static boolean exists(File file) {
         return file != null && file.exists();
     }
     
     /**
-     * 
-     * @param path
-     * @return
+     * 判断文件/文件夹是否存在
+     * @param path Path
+     * @return boolean
      */
     public static boolean exists(Path path) {
         return path != null && Files.exists(path);
     }
     
     /**
-     * 
-     * @param filePath
-     * @return
+     * 判断指定路径上是否是文件
+     * @param filePath String
+     * @return boolean
      */
     public static boolean isFile(String filePath) {
         return isNotBlank(filePath) && isFile(Paths.get(filePath));
     }
     
     /**
-     * 
-     * @param file
-     * @return
+     * 判断是否是文件
+     * @param file File
+     * @return boolean
      */
     public static boolean isFile(File file) {
         return file != null && file.isFile();
     }
     
     /**
-     * 
-     * @param path
-     * @return
+     * 判断是否是文件
+     * @param path Path
+     * @return boolean
      */
     public static boolean isFile(Path path) {
         return path != null && Files.isRegularFile(path);
     }
     
     /**
-     * 
-     * @param uri
-     * @return
+     * 判断{@link URI}是否指向一个文件
+     * @param uri URI
+     * @return boolean
      */
     public static boolean isFile(URI uri) {
         if (uri != null) {
@@ -334,38 +315,18 @@ public class Resources {
         return false;
     }
     
-    /**
-     * 
-     * @param entry
-     * @return
-     */
     public static boolean isFile(JarEntry entry) {
         return entry != null && !isDirectory(entry);
     }
     
-    /**
-     * 
-     * @param directory
-     * @return
-     */
     public static boolean isDirectory(String directory) {
         return isNotBlank(directory) && isDirectory(Paths.get(directory));
     }
     
-    /**
-     * 
-     * @param directory
-     * @return
-     */
     public static boolean isDirectory(File directory) {
         return directory != null && directory.isDirectory();
     }
     
-    /**
-     * 
-     * @param uri
-     * @return
-     */
     public static boolean isDirectory(URI uri) {
         if (uri != null) {
             if (isNotBlank(uri.getScheme())) {
@@ -380,56 +341,26 @@ public class Resources {
         return false;
     }
     
-    /**
-     * 
-     * @param entry
-     * @return
-     */
     public static boolean isDirectory(JarEntry entry) {
         return entry != null && entry.isDirectory();
     }
     
-    /**
-     * 
-     * @param directory
-     * @return
-     */
     public static boolean isDirectory(Path directory) {
         return directory != null && Files.isDirectory(directory);
     }
     
-    /**
-     * 
-     * @param jarPath
-     * @return
-     */
     public static boolean isJarFile(String jarPath) {
         return isFile(jarPath) && jarPath.endsWith(Jar_Extension);
     }
     
-    /**
-     * 
-     * @param file
-     * @return
-     */
     public static boolean isJarFile(File file) {
         return isFile(file) && file.getName().endsWith(Jar_Extension);
     }
     
-    /**
-     * 
-     * @param path
-     * @return
-     */
     public static boolean isJarFile(Path path) {
         return isFile(path) && path.getFileName().toString().endsWith(Jar_Extension);
     }
     
-    /**
-     * 
-     * @param uri
-     * @return
-     */
     public static boolean isJarFile(URI uri) {
         try {
             return isJarFile(uri.toURL());
@@ -438,50 +369,25 @@ public class Resources {
         }
     }
     
-    /**
-     * 
-     * @param url
-     * @return
-     */
     public static boolean isJarFile(URL url) {
         return url != null
-                && URL_Protocol_Jar.equals(url.getProtocol())
+                && (URL_Protocol_Jar.equals(url.getProtocol())
                 || (URL_Protocol_File.equals(url.getProtocol())
-                        && url.toExternalForm().endsWith(Jar_Extension));
+                        && url.toExternalForm().endsWith(Jar_Extension)));
     }
     
-    /**
-     * 
-     * @param file
-     * @return
-     */
     public static boolean isJavaSourceFile(File file) {
         return isFile(file) && file.getName().endsWith(SOURCE.extension);
     }
     
-    /**
-     * 
-     * @param path
-     * @return
-     */
     public static boolean isJavaSourceFile(Path path) {
         return isFile(path) && path.getFileName().toString().endsWith(SOURCE.extension);
     }
     
-    /**
-     * 
-     * @param file
-     * @return
-     */
     public static boolean isJavaClassFile(File file) {
         return isFile(file) && file.getName().endsWith(CLASS.extension);
     }
     
-    /**
-     * 
-     * @param path
-     * @return
-     */
     public static boolean isJavaClassFile(Path path) {
         return isFile(path) && path.getFileName().toString().endsWith(CLASS.extension);
     }
@@ -489,8 +395,8 @@ public class Resources {
     /**
      * Parse and get a file simple name.<br>
      * e.g: input "/Users/Jack/Documents/Test.txt", then output "Test".
-     * @param fileName
-     * @return
+     * @param fileName String
+     * @return String
      */
     public static String getSimpleFileName(String fileName) {
         if (fileName.contains(File.separator)) {
@@ -502,32 +408,14 @@ public class Resources {
         return fileName;
     }
     
-    /**
-     * 
-     * @param file
-     * @return
-     */
     public static List<File> listFile(File file) {
         return listFile(file, null);
     }
     
-    /**
-     * 
-     * @param file
-     * @param filter
-     * @return
-     */
     public static List<File> listFile(File file, FileFilter filter) {
         return listFile(file, filter, false);
     }
     
-    /**
-     * 
-     * @param file
-     * @param filter
-     * @param recurse
-     * @return
-     */
     public static List<File> listFile(File file, FileFilter filter, boolean recurse) {
         List<File> list = newArrayList();
         File[] files = file.listFiles();

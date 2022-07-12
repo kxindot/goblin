@@ -4,11 +4,12 @@
 
     <groupId>com.kxindot</groupId>
     <artifactId>goblin</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
     <name>goblin</name>
-    <url></url>
+    <url>https://github.com/kxindot/goblin</url>
+    <description>A tool project for Kxindot</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -109,6 +110,9 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <additionalJOption>-Xdoclint:none</additionalJOption>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
