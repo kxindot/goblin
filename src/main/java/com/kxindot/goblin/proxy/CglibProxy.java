@@ -7,6 +7,7 @@ import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.proxy.Enhancer;
 
 /**
+ * Cglib代理便捷工具类(静态方法)
  * @author zhaoqingjiang
  */
 public final class CglibProxy {
@@ -15,7 +16,7 @@ public final class CglibProxy {
     
     /**
      * 创建指定类的代理对象
-     * @param type Class<?> 待代理类
+     * @param type {@code Class<?>} 待代理类
      * @param helper CallbackHelper 代理回调
      * @return Object 代理对象
      */
@@ -25,7 +26,7 @@ public final class CglibProxy {
     
     /**
      * 创建指定类的代理对象
-     * @param type Class<?> 待代理类
+     * @param type {@code Class<?>} 待代理类
      * @param helper CallbackHelper 代理回调
      * @param argTypes {@code Class<?>[]} 待代理类的构造器入参类型
      * @param args {@code Object[]} 待代理类的构造器入参
