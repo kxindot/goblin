@@ -1,9 +1,13 @@
 package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Objects.EMP;
+import static com.kxindot.goblin.Objects.contains;
+import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.Objects.newHashMap;
 import static com.kxindot.goblin.Objects.newHashSet;
+import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.substringBeforeLast;
 import static com.kxindot.goblin.Resources.isJarFile;
 
 import java.io.File;
@@ -50,6 +54,31 @@ public final class Classes {
     public static final String Non_Primitive_Array_Prefix = "[L";
     /** 正则.符号转义: \\. */
     public static final String ESC_Regex_Dot = "\\.";
+    /** java.lang包 */
+    public static final String java_lang = "java.lang";
+    /**
+     * 数组类名前缀字符
+     */
+    private static final String Array_Name_Prefix = "[";
+    /**
+     * Element Type        Encoding
+     * class or interface  Lclassname;
+     */
+    private static final char Object_Array_Encoding = 'L';
+    /**
+     * <pre>
+     * Element Type        Encoding
+     * boolean                Z
+     * byte                   B
+     * char                   C
+     * double                 D
+     * float                  F
+     * int                    I
+     * long                   J
+     * short                  S
+     * </pre>
+     */
+    private static final char[] Primitive_Array_Encodings = new char[] {'Z', 'B', 'C', 'D', 'F', 'I', 'J', 'S'}; 
     
     /** 映射: 基础数据类型-基础数据包装类型 */
     private static final Map<Class<?>, Class<?>> primitiveWrapperMap = newHashMap();
@@ -134,6 +163,86 @@ public final class Classes {
      */
     public static boolean isPrimitiveWrapper(Class<?> cls) {
         return wrapperPrimitiveMap.containsKey(cls);
+    }
+    
+    /**
+     * 判断是否基础数据类型数组
+     * @param cls 类型
+     * @return boolean
+     */
+    public static boolean isPrimitiveArray(Class<?> cls) {
+        return cls == null ? false : cls.isArray() 
+                ? isPrimitiveArray(cls.getComponentType()) : cls.isPrimitive();
+    }
+    
+    /**
+     * 判断类名是否基础数据类型数组
+     * @param className 全类名
+     * @return boolean
+     */
+    public static boolean isPrimitiveArrayName(String className) {
+        if (isBlank(className)) return false;
+        if (className.startsWith(Array_Name_Prefix)) {
+            int i = className.lastIndexOf(Array_Name_Prefix);
+            return i + 2 == className.length() && contains(Primitive_Array_Encodings, className.charAt(++i));
+        }
+        return false;
+    }
+    
+    /**
+     * 判断类是否归属于java.lang包
+     * @param cls Class
+     * @return boolean
+     */
+    public static boolean isJavaLang(Class<?> cls) {
+        return cls == null ? false : cls.isArray() 
+                ? isJavaLang(cls.getComponentType()) : isJavaLang(cls.getName(), false);
+    }
+    
+    /**
+     * 判断类是否归属于java.lang包(不含其子包)
+     * @param className 类名
+     * @return boolean
+     */
+    public static boolean isJavaLang(String className) {
+        return isJavaLang(className, true);
+    }
+    
+    /**
+     * 判断类是否归属于java.lang包(不含其子包)
+     */
+    private static boolean isJavaLang(String className, boolean check) {
+        if (isBlank(className)) return false;
+        if (className.startsWith(Array_Name_Prefix)) {
+            int index = className.lastIndexOf(Array_Name_Prefix);
+            if (index < className.length()) {
+                char c = className.charAt(++index);
+                if (c == Object_Array_Encoding && index < className.length()) {
+                    return isJavaLang(className.substring(++index));
+                }
+            }
+        } else if (className.startsWith(java_lang)) {
+            return check ? exists(className) : true;
+        } else if (!className.contains(Package_Separator)) {
+            return exists(String.join(Package_Separator, java_lang, className));
+        }
+        return false;
+    }
+    
+    /**
+     * 判断类是否存在(是否存在于类加载器中)
+     * @param className 全类名
+     * @return boolean
+     */
+    public static boolean exists(String className) {
+        if (isBlank(className)) return false;
+        try {
+            loadClass(className);
+            return true;
+        } catch (IllegalArgumentException e) {
+            // ignore
+        }
+        return false;
     }
     
     /**
@@ -279,6 +388,29 @@ public final class Classes {
      */
     public static String toPackagePattern(String path) {
         return path.replaceAll(Path_Separator, Package_Separator);
+    }
+    
+    /**
+     * 获取类所在包名
+     * @param cls {@code Class<?>}
+     * @return String
+     */
+    public static String getPackageName(Class<?> cls) {
+        return getPackageName(cls.getName());
+    }
+    
+    /**
+     * 根据全类名获取类所在包名
+     * @param className 全类名
+     * @return String
+     */
+    public static String getPackageName(String className) {
+        requireNotBlank(className);
+        String clsName = className;
+        if (clsName.contains(Path_Separator)) {
+            clsName = toPackagePattern(clsName);
+        }
+        return substringBeforeLast(clsName, Package_Separator);
     }
     
     /**

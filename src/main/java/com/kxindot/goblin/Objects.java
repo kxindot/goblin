@@ -1,5 +1,10 @@
 package com.kxindot.goblin;
 
+import static com.kxindot.goblin.reflection.Reflections.newArray;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,6 +18,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,12 +30,16 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.map.CaseInsensitiveConcurrentHashMap;
 import com.kxindot.goblin.map.CaseInsensitiveHashMap;
 import com.kxindot.goblin.map.CaseInsensitiveLinkedHashMap;
+import com.kxindot.goblin.map.Pair;
+import com.kxindot.goblin.map.Pair.DefaultPair;
+import com.kxindot.goblin.map.Pair.UnmodifiablePair;
 import com.kxindot.goblin.typeconvert.TypeConvertException;
 import com.kxindot.goblin.typeconvert.TypeConverter;
 import com.kxindot.goblin.typeconvert.TypeConverterFactory;
@@ -43,6 +53,11 @@ public final class Objects {
     
     
     /**-------------------对象-------------------**/
+    
+    /**
+     * 长度为0的Object数组
+     */
+    public static final Object[] EMPTY_OBJ_ARRAY = new Object[0];
     
     /**
      * 判断传入的两个参数是否相等
@@ -230,6 +245,8 @@ public final class Objects {
     public static final String LAB = "<";
     /** 右尖括号/大于符号（right angle bracket）：{@code >} */
     public static final String RAB = ">";
+    /** 字符串下标 */
+    private static final int Index_Not_Found = -1;
     
     /**
      * 判断传入参数是否 <b><i>等于</i></b> null或""
@@ -382,6 +399,376 @@ public final class Objects {
     }
     
     /**
+     * 将字符串的首写字符由大写改为小写,例子如下:
+     * <pre>
+     * decapitalize(null) : null
+     * decapitalize("") : ""
+     * decapitalize("   ") : "   "
+     * decapitalize("FooBar") : "fooBar"
+     * decapitalize("fooBar") : "fooBar"
+     * decapitalize("X") : "x"
+     * decapitalize("x") : "x"
+     * decapitalize("URL") : "url"
+     * decapitalize("URLParser") : "urlParser"
+     * </pre>
+     * @param cs CharSequence
+     * @return String
+     */
+    public static String decapitalize(CharSequence cs) {
+        if (cs == null) {
+            return null;
+        } else if (cs.length() == 0) {
+            return cs.toString();
+        }
+        int n = 0;
+        int len = cs.length();
+        for (int i = 0; i < len; i++) {
+            if (Character.isUpperCase(cs.charAt(i)) && i == n) {
+                n++;
+                continue;
+            }
+            break;
+        }
+        
+        if (n == 1) {
+            return cs.toString();
+        } else if (n > 1) {
+            n = n < len ? n - 1 : n;
+        }
+        char chars[] = cs.toString().toCharArray();
+        for (int i = 0; i < n; i++) {
+            chars[i] = Character.toLowerCase(chars[i]);
+        }
+        return new String(chars);
+    }
+    
+    public static int countMatch(String text, String search) {
+        if (text == null || search == null) {
+            return -1;
+        }
+        return countMatch(text, search, 0);
+    }
+    
+    private static int countMatch(String text, String search, int count) {
+        int pos = text.indexOf(search);
+        if (pos != Index_Not_Found) {
+            return countMatch(text.substring(pos + search.length()), search, ++count);
+        }
+        return count;
+    }
+    
+    /**
+     * 字符串格式化.此方法是对
+     * {@link String#format(String, Object...)}方法的包装
+     * @see {@link String#format(String, Object...)}
+     * @param format String
+     * @param args {@code Object[]}
+     * @return String
+     */
+    public static String stringFormat(String format, Object... args) {
+        return String.format(format, args);
+    }
+    
+    /**
+     * 字符串拼接
+     * @param args {@code CharSequence[]}
+     * @return String
+     */
+    public static String stringJoin(final CharSequence... args) {
+        return stringJoinWith(EMP, args);
+    }
+    
+    /**
+     * 字符串拼接
+     * @param args {@code Object[]}
+     * @return String
+     */
+    public static String stringJoin(final Object... args) {
+        return stringJoinWith(EMP, args);
+    }
+    
+    /**
+     * 字符串拼接
+     * @param iterable {@code Iterable<?>}
+     * @return String
+     */
+    public static String stringJoin(Iterable<?> iterable) {
+        return stringJoinWith(EMP, iterable);
+    }
+    
+    /**
+     * 字符串拼接.使用指定分隔符(separator)拼接字符串
+     * @param separator CharSequence
+     * @param args {@code CharSequence[]}
+     * @return String
+     * @throws NullPointerException 当separator为null时抛出
+     */
+    public static String stringJoinWith(CharSequence separator, final CharSequence... args) {
+        return String.join(separator, args);
+    }
+    
+    /**
+     * 字符串拼接.使用指定分隔符(separator)拼接字符串
+     * @param separator CharSequence
+     * @param args {@code Object[]}
+     * @return String
+     * @throws NullPointerException 当separator为null时抛出
+     */
+    public static String stringJoinWith(CharSequence separrator, final Object... args) {
+        requireNotNull(separrator);
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            if (i > 0) {
+                builder.append(separrator);
+            }
+            if (args[i] != null) {
+                builder.append(args[i]);
+            }
+        }
+        return builder.toString();
+    }
+    
+    /**
+     * 字符串拼接.使用指定分隔符(separator)拼接字符串
+     * @param separator CharSequence
+     * @param iterable {@code Iterable<?>}
+     * @return String
+     * @throws NullPointerException 当separator为null时抛出
+     */
+    public static String stringJoinWith(CharSequence separrator, Iterable<?> iterable) {
+        requireNotNull(separrator);
+        StringBuilder builder = new StringBuilder();
+        Iterator<?> iterator = iterable.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            if (i > 0) {
+                builder.append(separrator);
+            }
+            Object obj = iterator.next();
+            if (obj != null) {
+                builder.append(obj);
+            }
+            i++;
+        }
+        return builder.toString();
+    }
+    
+    /**
+     * 
+     * @param text
+     * @param search
+     * @param replacement
+     * @return
+     */
+    public static String stringReplace(String text, String search, String replacement) {
+        return stringReplace(text, search, replacement, -1, false);
+    }
+    
+    public static String stringReplaceFirst(String text, String search, String replacement) {
+        return stringReplaceFirst(text, search, replacement, 1);
+    }
+    
+    public static String stringReplaceFirst(String text, String search, String replacement, int count) {
+        return stringReplace(text, search, replacement, count, false);
+    }
+    
+    /**
+     * 字符串替换
+     */
+    private static String stringReplace(String text, String search
+            , String replacement, int count, boolean ignoreCase) {
+        if (isEmpty(text) || isEmpty(search) 
+                || replacement == null || count == 0) {
+            return text;
+        }
+        String target = text;
+        if (ignoreCase) {
+            target = text.toLowerCase();
+            search = search.toLowerCase();
+        }
+        int start = 0;
+        int end = target.indexOf(search, start);
+        if (end == Index_Not_Found) {
+            return text;
+        }
+        final int replLength = search.length();
+        int increase = replacement.length() - replLength;
+        increase = increase < 0 ? 0 : increase;
+        increase *= count < 0 ? 16 : count > 64 ? 64 : count;
+        final StringBuilder buf = new StringBuilder(text.length() + increase);
+        while (end != Index_Not_Found) {
+            buf.append(text.substring(start, end)).append(replacement);
+            start = end + replLength;
+            if (--count == 0) {
+                break;
+            }
+            end = target.indexOf(search, start);
+        }
+        buf.append(text.substring(start));
+        return buf.toString();
+    }
+    
+    /**
+     * 
+     * @param cs
+     * @param startIndex
+     * @return
+     */
+    public static String substring(CharSequence cs, int startIndex) {
+        return cs == null ? null : substring(cs, startIndex, cs.length());
+    }
+    
+    /**
+     * 
+     * @param cs
+     * @param beginIndex
+     * @param endIndex
+     * @return
+     */
+    public static String substring(CharSequence cs, int beginIndex, int endIndex) {
+        if (cs == null) {
+            return null;
+        }
+        int len = cs.length();
+        if (beginIndex < 0) {
+            beginIndex = len + beginIndex;
+        }
+        if (endIndex < 0) {
+            endIndex = len + endIndex;
+        }
+        if (endIndex > len) {
+            endIndex = len;
+        }
+        if (beginIndex > endIndex) {
+            return EMP;
+        }
+        if (beginIndex < 0) {
+            beginIndex = 0;
+        }
+        if (endIndex < 0) {
+            endIndex = 0;
+        }
+        return cs.toString().substring(beginIndex, endIndex);
+    }
+    
+    /**
+     * 
+     * @param cs
+     * @param len
+     * @return
+     */
+    public static String substringLeft(CharSequence cs, int len) {
+        if (cs == null) {
+            return null;
+        } else if (len <= 0) {
+            return EMP;
+        } else if (len >= cs.length()) {
+            return cs.toString();
+        }
+        return cs.toString().substring(0, len);
+    }
+    
+    /**
+     * 
+     * @param cs
+     * @param len
+     * @return
+     */
+    public static String substringRight(CharSequence cs, int len) {
+        if (cs == null) {
+            return null;
+        } else if (len <= 0) {
+            return EMP;
+        } else if (len >= cs.length()) {
+            return cs.toString();
+        }
+        return cs.toString().substring(cs.length() - len);
+    }
+    
+    /**
+     * 
+     * @param cs
+     * @param separator
+     * @return
+     */
+    public static String substringBefore(CharSequence cs, CharSequence separator) {
+        if (cs == null) {
+            return null;
+        } else if (isEmpty(cs) 
+                || isEmpty(separator)) {
+            return EMP;
+        }
+        String t = cs.toString();
+        int p = t.indexOf(separator.toString());
+        if (p != Index_Not_Found) {
+            t = t.substring(0, p);
+        }
+        return t;
+    }
+    
+    /**
+     * 
+     * @param cs
+     * @param separator
+     * @return
+     */
+    public static String substringAfter(CharSequence cs, CharSequence separator) {
+        if (cs == null) {
+            return null;
+        } else if (isEmpty(cs) 
+                || isEmpty(separator)) {
+            return EMP;
+        }
+        String t = cs.toString();
+        int p = t.indexOf(separator.toString());
+        if (p != Index_Not_Found) {
+            t = t.substring(p + 1);
+        }
+        return t;
+    }
+
+    /**
+     * 
+     * @param cs
+     * @param separator
+     * @return
+     */
+    public static String substringBeforeLast(CharSequence cs, CharSequence separator) {
+        if (cs == null) {
+            return null;
+        } else if (isEmpty(cs) 
+                || isEmpty(separator)) {
+            return EMP;
+        }
+        String t = cs.toString();
+        int p = t.lastIndexOf(separator.toString());
+        if (p != Index_Not_Found) {
+            t = t.substring(0, p);
+        }
+        return t;
+    }
+    
+    /**
+     * 
+     * @param text
+     * @param separator
+     * @return
+     */
+    public static String substringAfterLast(CharSequence text, CharSequence separator) {
+        if (text == null) {
+            return null;
+        } else if (isEmpty(text) || isEmpty(separator)) {
+            return EMP;
+        }
+        String t = text.toString();
+        int p = t.lastIndexOf(separator.toString());
+        if (p != Index_Not_Found) {
+            t = t.substring(p + 1);
+        }
+        return t;
+    }
+    
+    /**
      * 字符串截取<br>
      * 截取匹配两字符串的中间字串,并返回,且只返回从左到右的首次匹配值.
      * @param str 字符串
@@ -402,6 +789,21 @@ public final class Objects {
             }
         }
         return subStr;
+    }
+    
+    /**
+     * 
+     * @param ex
+     * @return
+     */
+    public static String toString(Throwable ex) {
+        try (StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw)) {
+            ex.printStackTrace(pw);
+            return sw.toString();
+        } catch (IOException e) {
+            throw IO.newIORuntimeException(e);
+        }
     }
     
     /**-------------------断言-------------------**/
@@ -776,6 +1178,21 @@ public final class Objects {
     }
     
     /**
+     * 判断字符数组内是否包含指定字符
+     * @param cs 字符数组
+     * @param c 字符
+     * @return - 若包含则返回true,反之false
+     */
+    public static boolean contains(char[] cs, char c) {
+        for (char e : cs) {
+            if (e == c) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
      * 判断数组内是否包含指定元素
      * @param as A[] 数组
      * @param a A 元素
@@ -841,14 +1258,194 @@ public final class Objects {
     }
     
     /**
-     * 创建一个指定长度的数组对象
-     * @param cls 数组类型
-     * @param length 数组长度
-     * @return T[] - 数组对象
+     * 对象数组转换为{@link List}列表.
+     * 此方法是对{@link Arrays#asList(Object...)}方法的包装.
+     * @see Arrays#asList(Object...)
+     * @see Arrays.ArrayList
+     * @param a 对象数组
+     * @return {@code List<T>}
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] newArray(Class<? extends T[]> cls, int length) {
-        return (T[]) Array.newInstance(cls.getComponentType(), length);
+    @SafeVarargs
+    public static <T> List<T> asList(T... a) {
+        return Arrays.asList(a);
+    }
+    
+    /**
+     * 将字节数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 字节数组
+     * @return {@code List<>}
+     */
+    public static List<Byte> toList(byte[] a) {
+        List<Byte> list = newArrayList(a.length);
+        for (byte e : a) {list.add(e);}
+        return list;
+    }
+    
+    /**
+     * 将字符数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 字符数组
+     * @return {@code List<Character>}
+     */
+    public static List<Character> toList(char[] a) {
+        List<Character> list = newArrayList(a.length);
+        for (char e : a) {list.add(e);}
+        return list;
+    }
+    
+    /**
+     * 将短整形数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 短整形数组
+     * @return {@code List<Short>}
+     */
+    public static List<Short> toList(short[] a) {
+        List<Short> list = newArrayList(a.length);
+        for (short e : a) {list.add(e);}
+        return list;
+    }
+    
+    /**
+     * 将整形数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 整形数组
+     * @return {@code List<Integer>}
+     */
+    public static List<Integer> toList(int[] a) {
+        return Arrays.stream(a)
+                .mapToObj(Integer::valueOf)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 将长整形数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 长整形数组
+     * @return {@code List<Long>}
+     */
+    public static List<Long> toList(long[] a) {
+        return Arrays.stream(a)
+                .mapToObj(Long::valueOf)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 将单精浮点数数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 单精浮点数数组
+     * @return {@code List<Float>}
+     */
+    public static List<Float> toList(float[] a) {
+        List<Float> list = newArrayList(a.length);
+        for (float e : a) {list.add(e);}
+        return list;
+    }
+    
+    /**
+     * 将双精浮点数数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 双精浮点数数组
+     * @return {@code List<Double>}
+     */
+    public static List<Double> toList(double[] a) {
+        return Arrays.stream(a)
+                .mapToObj(Double::valueOf)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 将对象数组转换为{@link List}列表.
+     * 返回列表类型是{@link ArrayList}
+     * @param a 对象数组
+     * @return {@code List<T>}
+     */
+    @SafeVarargs
+    public static <T> List<T> toList(T... a) {
+        return newArrayList(a);
+    }
+    
+    /**
+     * 将字符数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 字符数组
+     * @return {@code Set<Character>}
+     */
+    public static Set<Character> toSet(char[] a) {
+        Set<Character> set = newHashSet(a.length);
+        for (char c : a) {set.add(c);}
+        return set;
+    }
+    
+    /**
+     * 将短整形数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 短整形数组
+     * @return {@code Set<Short>}
+     */
+    public static Set<Short> toSet(short[] a) {
+        Set<Short> set = newHashSet(a.length);
+        for (short c : a) {set.add(c);}
+        return set;
+    }
+    
+    /**
+     * 将整形数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 整形数组
+     * @return {@code Set<Integer>}
+     */
+    public static Set<Integer> toSet(int[] a) {
+        return Arrays.stream(a)
+                .mapToObj(Integer::valueOf)
+                .collect(Collectors.toSet());
+    }
+    
+    /**
+     * 将长整形数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 长整形数组
+     * @return {@code Set<Long>}
+     */
+    public static Set<Long> toSet(long[] a) {
+        return Arrays.stream(a)
+                .mapToObj(Long::valueOf)
+                .collect(Collectors.toSet());
+    }
+    
+    /**
+     * 将单精浮点数数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 单精浮点数数组
+     * @return {@code Set<Float>}
+     */
+    public static Set<Float> toSet(float[] a) {
+        Set<Float> set = newHashSet(a.length);
+        for (float c : a) {set.add(c);}
+        return set;
+    }
+    
+    /**
+     * 将双精浮点数数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 双精浮点数数组
+     * @return {@code Set<Double>}
+     */
+    public static Set<Double> toSet(double[] a) {
+        return Arrays.stream(a)
+                .mapToObj(Double::valueOf)
+                .collect(Collectors.toSet());
+    }
+    
+    /**
+     * 将对象数组转换为{@link Set}集合.
+     * 返回集合类型是{@link HashSet}
+     * @param a 对象数组
+     * @return {@code Set<T>}
+     */
+    @SafeVarargs
+    public static <T> Set<T> toSet(T... a) {
+        return newHashSet(a);
     }
     
     /**
@@ -927,8 +1524,7 @@ public final class Objects {
     
     @SafeVarargs
     public static <T> List<T> newArrayList(T... array) {
-        requireNotNull(array);
-        return newArrayList(Arrays.asList(array));
+        return newArrayList(asList(array));
     }
     
     public static <T> List<T> newArrayList(Iterable<T> iterable) {
@@ -993,42 +1589,90 @@ public final class Objects {
         return new ArrayBlockingQueue<>(capacity);
     }
     
-    public static <T> List<T> newUnmodifiedEmptyList() {
+    
+    /**
+     * 
+     * @return
+     */
+    public static <T> List<T> unmodifiableEmptyList() {
         return Collections.emptyList();
     }
     
-    public static <T> List<T> newUnmodifiedList(T[] array) {
+    /**
+     * 
+     * @return
+     */
+    public static <T> Set<T> unmodifiableEmptySet() {
+        return Collections.emptySet();
+    }
+    
+    /**
+     * 
+     * @param array
+     * @return 
+     */
+    @SafeVarargs
+    public static <T> List<T> newUnmodifiableList(T... array) {
         return Collections.unmodifiableList(Arrays.asList(array));
     }
     
-    public static <T> List<T> newUnmodifiedList(List<T> list) {
-        return Collections.unmodifiableList(list);
-    }
-    
-    public static <T> List<T> newUnmodifiedList(Collection<T> collection) {
-        return Collections.unmodifiableList(newArrayList(collection));
-    }
-    
-    public static <T> Set<T> newUnmodifiedSet(T[] array) {
+    /**
+     * 
+     * @param array
+     * @return
+     */
+    @SafeVarargs
+    public static <T> Set<T> newUnmodifiableSet(T... array) {
         return Collections.unmodifiableSet(newHashSet(array));
     }
     
-    public static <T> Set<T> newUnmodifiedSet(Set<T> set) {
+    /**
+     * 
+     * @param <T>
+     * @param list
+     * @return
+     */
+    public static <T> List<T> newUnmodifiableList(List<T> list) {
+        return Collections.unmodifiableList(list);
+    }
+    
+    /**
+     * 
+     * @param set
+     * @return
+     */
+    public static <T> Set<T> newUnmodifiableSet(Set<T> set) {
         return Collections.unmodifiableSet(set);
     }
     
-    public static <T> Set<T> newUnmodifiedSet(Collection<T> collection) {
+    /**
+     * 
+     * @param collection
+     * @return
+     */
+    public static <T> List<T> newUnmodifiableList(Collection<T> collection) {
+        return Collections.unmodifiableList(newArrayList(collection));
+    }
+    
+    /**
+     * 
+     * @param collection
+     * @return
+     */
+    public static <T> Set<T> newUnmodifiableSet(Collection<T> collection) {
         return Collections.unmodifiableSet(newHashSet(collection));
     }
     
-    @SuppressWarnings("unchecked")
-    public static <T> void addAll(Collection<T> collection, T... elements) {
-        collection.addAll(Arrays.asList(elements));
+    /**
+     * 集合转换为数组
+     * @param collection 集合
+     * @param type 数组类型
+     * @return 数组
+     */
+    public static <T> T[] toArray(Collection<T> collection, Class<T[]> type) {
+        return collection.toArray(newArray(type, collection.size()));
     }
     
-    public static <T> void addAll(Collection<T> collection, Collection<T> elements) {
-        collection.addAll(elements);
-    }
     
     /**------------------Map------------------**/
     
@@ -1090,4 +1734,75 @@ public final class Objects {
         return Collections.unmodifiableMap(map);
     }
     
+    
+    /**------------------Pair------------------**/
+    
+    /**
+     * 判断键值对{@link Pair}中的键(key)是否为null
+     * @param pair 键值对
+     * @return boolean
+     */
+    public static <K, V> boolean isNullKey(Pair<K, V> pair) {
+        return pair != null && null == pair.getKey();
+    }
+    
+    /**
+     * 判断键值对{@link Pair}中的键对应的值(value)是否为null
+     * @param pair 键值对
+     * @return boolean
+     */
+    public static <K, V> boolean isNullValue(Pair<K, V> pair) {
+        return pair != null && null == pair.getValue();
+    }
+    
+    /**
+     * 创建一个键值对{@link Pair}实例
+     * @see DefaultPair
+     * @return {@code Pair<K, V>}
+     */
+    public static <K, V> Pair<K, V> newPair() {
+        return new DefaultPair<>();
+    }
+    
+    /**
+     * 创建一个键值对{@link Pair}实例
+     * @see DefaultPair
+     * @param key 键的值
+     * @param value 键对应的值
+     * @return {@code Pair<K, V>}
+     */
+    public static <K, V> Pair<K, V> newPair(K key, V value) {
+        return new DefaultPair<>(key, value);
+    }
+    
+    /**
+     * 创建一个键值对{@link Pair}实例
+     * @see DefaultPair
+     * @param pair 另一个键值对
+     * @return {@code Pair<K, V>}
+     */
+    public static <K, V> Pair<K, V> newPair(Pair<K, V> pair) {
+        return new DefaultPair<>(pair.getKey(), pair.getValue());
+    }
+    
+    /**
+     * 创建一个不可修改的键值对{@link Pair}实例
+     * @see UnmodifiablePair
+     * @param key 键的值
+     * @param value 键对应的值
+     * @return {@code Pair<K, V>}
+     */
+    public static <K, V> Pair<K, V> newUnmodifiablePair(K key, V value) {
+        return new UnmodifiablePair<>(key, value);
+    }
+    
+    /**
+     * 创建一个不可修改的键值对{@link Pair}实例
+     * @see UnmodifiablePair
+     * @param pair 另一个键值对
+     * @return {@code Pair<K, V>}
+     */
+    public static <K, V> Pair<K, V> newUnmodifiablePair(Pair<K, V> pair) {
+        return new UnmodifiablePair<>(pair.getKey(), pair.getValue());
+    }
 }
