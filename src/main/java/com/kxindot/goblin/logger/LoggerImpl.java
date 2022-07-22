@@ -29,7 +29,7 @@ class LoggerImpl implements Logger {
     
     private static final String Braces = "{}";
     private static final String Specifier = "%s";
-    private static final String Pattern = "[%s] [%s] %s [%s] => %s";
+    private static final String Pattern = "%s [%s] %s [%s] => %s";
     private static final DateTimeFormatter Timer = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS");
     private final String name;
     private final org.slf4j.Logger logger;
