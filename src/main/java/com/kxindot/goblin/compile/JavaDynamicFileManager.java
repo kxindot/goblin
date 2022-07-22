@@ -229,7 +229,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
                 return file;
             }
         }
-        return file;
+        return null;
     }
     
     /**
