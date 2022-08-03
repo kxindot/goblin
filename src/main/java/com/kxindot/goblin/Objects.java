@@ -1,6 +1,6 @@
 package com.kxindot.goblin;
 
-import static com.kxindot.goblin.reflection.Reflections.newArray;
+import static com.kxindot.goblin.reflection.Reflections.newArrayInstance;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,11 +24,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -156,6 +158,18 @@ public final class Objects {
             }
         }
         return b;
+    }
+    
+    /**
+     * 依据对象值是否为空返回对象值或其默认值
+     * 若传入的对象(value)不等于null,则返回该对象值,反之返回默认对象值(defaultValue).
+     * @param <T> 任意对象
+     * @param value 对象值
+     * @param defaultValue 对象默认值
+     * @return 若传入的对象(value)不等于null,则返回该对象值,反之返回默认对象值(defaultValue).
+     */
+    public static <T> T defaultIfNull(T value, T defaultValue) {
+        return value != null ? value : defaultValue;
     }
     
     /**
@@ -396,6 +410,30 @@ public final class Objects {
             }
         }
         return true;
+    }
+    
+    /**
+     * 依据字符串是否为空字符串("")或null返回其本身或默认值.
+     * 若传入的字符串(value)不等于空字符串("")或null,则返回该字符串,反之返回默认字符串(defaultValue).
+     * @param <T> CharSequence类型
+     * @param value 字符串
+     * @param defaultValue 默认字符串
+     * @return 若传入的字符串(value)不等于空字符串("")或null,则返回该字符串,反之返回默认字符串(defaultValue).
+     */
+    public static <T extends CharSequence> T defaultIfEmpty(T value, T defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据字符串是否为空串(空字符串或除空格外不包含其他字符)或null返回其本身或默认值.
+     * 若传入的字符串(value)不等于空串(空字符串或除空格外不包含其他字符),则返回该字符串,反之返回默认字符串(defaultValue).
+     * @param <T> CharSequence类型
+     * @param value 字符串
+     * @param defaultValue 默认字符串
+     * @return 若传入的字符串(value)不等于空串(空字符串或除空格外不包含其他字符),则返回该字符串,反之返回默认字符串(defaultValue).
+     */
+    public static <T extends CharSequence> T defaultIfBlank(T value, T defaultValue) {
+        return isBlank(value) ? value : defaultValue;
     }
     
     /**
@@ -1160,21 +1198,75 @@ public final class Objects {
 /**-------------------数组-------------------**/
     
     /**
-     * 判断传入数组是否等于null或长度等于0
-     * @param arr T[]
-     * @return - 若传入数组等于null或长度等于0则返回true,反之false
+     * 判断传入byte数组是否等于null或长度等于0.
+     * @param array byte数组
+     * @return 若传入byte数组等于null或长度等于0,则返回true,反之false.
      */
-    public static <T> boolean isEmpty(T[] arr) {
-        return arr == null || arr.length == 0;
+    public static boolean isEmpty(byte[] array) {
+        return array == null || array.length == 0;
     }
     
     /**
-     * 判断传入数组是否不等于null且长度不等于0
-     * @param arr T[]
-     * @return - 若传入数组不等于null且长度不等于0则返回true,反之false
+     * 判断传入short数组是否等于null或长度等于0.
+     * @param array short数组
+     * @return 若传入short数组等于null或长度等于0,则返回true,反之false.
      */
-    public static <T> boolean isNotEmpty(T[] arr) {
-        return !isEmpty(arr);
+    public static boolean isEmpty(short[] array) {
+        return array == null || array.length == 0;
+    }
+    
+    /**
+     * 判断传入int数组是否等于null或长度等于0.
+     * @param array int数组
+     * @return 若传入int数组等于null或长度等于0,则返回true,反之false.
+     */
+    public static boolean isEmpty(int[] array) {
+        return array == null || array.length == 0;
+    }
+    
+    /**
+     * 判断传入long数组是否等于null或长度等于0.
+     * @param array long数组
+     * @return 若传入long数组等于null或长度等于0,则返回true,反之false.
+     */
+    public static boolean isEmpty(long[] array) {
+        return array == null || array.length == 0;
+    }
+    
+    /**
+     * 判断传入float数组是否等于null或长度等于0.
+     * @param array float数组
+     * @return 若传入float数组等于null或长度等于0,则返回true,反之false.
+     */
+    public static boolean isEmpty(float[] array) {
+        return array == null || array.length == 0;
+    }
+    
+    /**
+     * 判断传入byte数组是否等于null或长度等于0.
+     * @param array byte数组
+     * @return 若传入byte数组等于null或长度等于0,则返回true,反之false.
+     */
+    public static boolean isEmpty(double[] array) {
+        return array == null || array.length == 0;
+    }
+    
+    /**
+     * 判断传入对象数组是否等于null或长度等于0.
+     * @param array 对象数组
+     * @return 若传入数组等于null或长度等于0,则返回true,反之false.
+     */
+    public static <T> boolean isEmpty(T[] array) {
+        return array == null || array.length == 0;
+    }
+    
+    /**
+     * 判断传入数组是否不等于null且长度不等于0.
+     * @param array 对象数组
+     * @return 若传入数组不等于null且长度不等于0,则返回true,反之false.
+     */
+    public static <T> boolean isNotEmpty(T[] array) {
+        return array != null && array.length != 0;
     }
     
     /**
@@ -1255,6 +1347,83 @@ public final class Objects {
                 return mid; // key found
         }
         return -(low + 1); // key not found.
+    }
+    
+    /**
+     * 依据byte数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的byte数组不为null且长度不等于0,则返回该byte数组,反之返回默认值(defaultValue).
+     * @param value byte数组
+     * @param defaultValue 默认byte数组
+     * @return 若传入的byte数组不为null且长度不等于0,则返回该byte数组,反之返回默认值(defaultValue).
+     */
+    public static byte[] defaultIfEmpty(byte[] value, byte[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据short数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的short数组不为null且长度不等于0,则返回该short数组,反之返回默认值(defaultValue).
+     * @param value short数组
+     * @param defaultValue 默认short数组
+     * @return 若传入的short数组不为null且长度不等于0,则返回该short数组,反之返回默认值(defaultValue).
+     */
+    public static short[] defaultIfEmpty(short[] value, short[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据int数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的int数组不为null且长度不等于0,则返回该int数组,反之返回默认值(defaultValue).
+     * @param value int数组
+     * @param defaultValue 默认int数组
+     * @return 若传入的int数组不为null且长度不等于0,则返回该int数组,反之返回默认值(defaultValue).
+     */
+    public static int[] defaultIfEmpty(int[] value, int[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据long数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的long数组不为null且长度不等于0,则返回该long数组,反之返回默认值(defaultValue).
+     * @param value long数组
+     * @param defaultValue 默认long数组
+     * @return 若传入的long数组不为null且长度不等于0,则返回该long数组,反之返回默认值(defaultValue).
+     */
+    public static long[] defaultIfEmpty(long[] value, long[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据float数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的float数组不为null且长度不等于0,则返回该float数组,反之返回默认值(defaultValue).
+     * @param value float数组
+     * @param defaultValue 默认float数组
+     * @return 若传入的float数组不为null且长度不等于0,则返回该float数组,反之返回默认值(defaultValue).
+     */
+    public static float[] defaultIfEmpty(float[] value, float[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据double数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的double数组不为null且长度不等于0,则返回该double数组,反之返回默认值(defaultValue).
+     * @param value double数组
+     * @param defaultValue 默认double数组
+     * @return 若传入的double数组不为null且长度不等于0,则返回该double数组,反之返回默认值(defaultValue).
+     */
+    public static double[] defaultIfEmpty(double[] value, double[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
+    }
+    
+    /**
+     * 依据对象数组是否为null或长度等于0返回其本身或默认值.
+     * 若传入的对象数组不为null且长度不等于0,则返回该对象数组,反之返回默认值(defaultValue).
+     * @param value 对象数组
+     * @param defaultValue 默认对象数组
+     * @return 若传入的对象数组不为null且长度不等于0,则返回该对象数组,反之返回默认值(defaultValue).
+     */
+    public static <T> T[] defaultIfEmpty(T[] value, T[] defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
     }
     
     /**
@@ -1457,7 +1626,7 @@ public final class Objects {
      */
     public static <A, B> B[] copyOf(A[] a, Class<? extends B[]> bType, Function<A, B> mapper) {
         int len = a.length;
-        B[] b = newArray(bType, len);
+        B[] b = newArrayInstance(bType, len);
         for (int i = 0; i < len; i++) {
             b[i] = mapper.apply(a[i]);
         }
@@ -1512,6 +1681,17 @@ public final class Objects {
     
     public static boolean isNotEmpty(Collection<?> collection) {
         return !isEmpty(collection);
+    }
+    
+    /**
+     * 依据集合是否为null或长度等于0返回其本身或默认值.
+     * 若传入的集合不为null且长度不等于0,则返回该集合,反之返回默认值(defaultValue).
+     * @param value 集合对象
+     * @param defaultValue 默认集合对象
+     * @return 若传入的集合不为null且长度不等于0,则返回该集合,反之返回默认值(defaultValue).
+     */
+    public static <T extends Collection<?>> T defaultIfEmpty(T value, T defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
     }
     
     public static <T> List<T> newArrayList() {
@@ -1589,6 +1769,9 @@ public final class Objects {
         return new ArrayBlockingQueue<>(capacity);
     }
     
+    public static <T> Stack<T> newStack() {
+        return new Stack<>();
+    }
     
     /**
      * 
@@ -1670,7 +1853,7 @@ public final class Objects {
      * @return 数组
      */
     public static <T> T[] toArray(Collection<T> collection, Class<T[]> type) {
-        return collection.toArray(newArray(type, collection.size()));
+        return collection.toArray(newArrayInstance(type, collection.size()));
     }
     
     
@@ -1682,6 +1865,17 @@ public final class Objects {
     
     public static boolean isNotEmpty(Map<?, ?> map) {
         return !isEmpty(map);
+    }
+    
+    /**
+     * 依据Map是否为null或长度等于0返回其本身或默认值.
+     * 若传入的Map不为null且长度不等于0,则返回该Map,反之返回默认值(defaultValue).
+     * @param value Map对象
+     * @param defaultValue 默认Map对象
+     * @return 若传入的Map不为null且长度不等于0,则返回该Map,反之返回默认值(defaultValue).
+     */
+    public static <T extends Map<?, ?>> T defaultIfEmpty(T value, T defaultValue) {
+        return isEmpty(value) ? value : defaultValue;
     }
     
     public static <K, V> Map<K, V> newHashMap() {
@@ -1716,6 +1910,16 @@ public final class Objects {
     
     public static <K, V> Map<K, V> newLinkedHashMap() {
         return new LinkedHashMap<>();
+    }
+    
+    public static <K, V> Map<K, V> newLinkedHashMap(int elementCount) {
+        requireTrue(elementCount > 0, "elementCount must greater than 0");
+        int c = (int) (elementCount / 0.75 + 1);
+        return new LinkedHashMap<>(c);
+    }
+    
+    public static <K, V> Map<K, V> newLinkedHashMap(Map<? extends K, ? extends V> map) {
+        return new LinkedHashMap<>(map);
     }
     
     public static <K, V> Map<K, V> newConcurrentHashMap() {
@@ -1805,4 +2009,214 @@ public final class Objects {
     public static <K, V> Pair<K, V> newUnmodifiablePair(Pair<K, V> pair) {
         return new UnmodifiablePair<>(pair.getKey(), pair.getValue());
     }
+    
+    
+    
+    
+    /**-------------------Lambda-------------------**/
+    
+    
+    /**
+     * 包装FunctionalInterface: {@link Consumer},使其可抛出未检异常{@link Exception}.
+     * @see ThrowableConsumer
+     * @param <T> 入参类型
+     * @param consumer {@code ThrowableConsumer<T>}
+     * @return {@code Consumer<T>}
+     */
+    public static <T> Consumer<T> consumer(ThrowableConsumer<T> consumer) {
+        return p -> {
+            try {
+                consumer.accept(p);
+            } catch (Throwable e) {
+                throw new LambdaRuntimeException(e);
+            }
+        };
+    }
+    
+    /**
+     * 包装FunctionalInterface: {@link Function},使其可抛出未检异常{@link Exception}.
+     * @see ThrowableFunction
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param consumer {@code ThrowableFunction<T>}
+     * @return {@code Function<T>}
+     */
+    public static <T, R> Function<T, R> function(ThrowableFunction<T, R> function) {
+        return p -> {
+            try {
+                return function.apply(p);
+            } catch (Throwable e) {
+                throw new LambdaRuntimeException(e);
+            }
+        };
+    }
+    
+    /**
+     * 若指定对象value不等于null,则执行{@link Consumer#accept(Object)}方法.
+     * 否则直接返回,不做任何操作.
+     * @param <T> 入参类型
+     * @param value 对象值
+     * @param consumer {@code Consumer<T>}
+     */
+    public static <T> void doIfNotNull(T value, Consumer<T> consumer) {
+        if (value != null) {
+            consumer.accept(value);
+        }
+    }
+    
+    /**
+     * 若指定对象value不等于null,则执行{@link Function#apply(Object)}方法并返回其返回值,否则返回null.
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param value 对象值
+     * @param function {@code Function<T, R>}
+     * @return R 若value等于null,则返回null.否则返回{@link Function#apply(Object)}方法返回值.
+     */
+    public static <T, R> R doIfNotNull(T value, Function<T, R> function) {
+        return value == null ? null : function.apply(value);
+    }
+    
+    /**
+     * 若指定字符串value不等于""或null,则执行{@link Consumer#accept(Object)}方法.
+     * 否则直接返回,不做任何操作.
+     * @see #isEmpty(CharSequence)
+     * @param <T> 入参类型
+     * @param value 字符串
+     * @param consumer {@code Consumer<T>}
+     */
+    public static <T extends CharSequence> void doIfNotEmpty(T value, Consumer<T> consumer) {
+        if (!isEmpty(value)) {
+            consumer.accept(value);
+        }
+    }
+    
+    /**
+     * 若指定字符串value不等于""或null,则执行{@link Function#apply(Object)}方法并返回其返回值,否则返回null.
+     * @see #isEmpty(CharSequence)
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param value 字符串
+     * @param function {@code Function<T, R>}
+     * @return R 若value等于""或null,则返回null.否则返回{@link Function#apply(Object)}方法返回值.
+     */
+    public static <T extends CharSequence, R> R doIfNotEmpty(T value, Function<T, R> function) {
+        return isEmpty(value) ? null : function.apply(value);
+    }
+    
+    /**
+     * 若指定字符串value不等于空或null,则执行{@link Consumer#accept(Object)}方法.
+     * 否则直接返回,不做任何操作.
+     * @see #isBlank(CharSequence)
+     * @param <T> 入参类型
+     * @param value 字符串
+     * @param consumer {@code Consumer<T>}
+     */
+    public static <T extends CharSequence> void doIfNotBlank(T value, Consumer<T> consumer) {
+        if (isNotBlank(value)) {
+            consumer.accept(value);
+        }
+    }
+    
+    /**
+     * 若指定字符串value不等于空或null,则执行{@link Function#apply(Object)}方法并返回其返回值,否则返回null.
+     * @see #isBlank(CharSequence)
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param value 字符串
+     * @param function {@code Function<T, R>}
+     * @return R 若value等于空或null,则返回null.否则返回{@link Function#apply(Object)}方法返回值.
+     */
+    public static <T extends CharSequence, R> R doIfNotBlank(T value, Function<T, R> function) {
+        return isBlank(value) ? null : function.apply(value);
+    }
+    
+    /**
+     * 若指定集合value不等于null且长度不等于0,则执行{@link Consumer#accept(Object)}方法.
+     * 否则直接返回,不做任何操作.
+     * @see #isEmpty(Collection)
+     * @param <T> 入参类型
+     * @param value 集合对象
+     * @param consumer {@code Consumer<T>}
+     */
+    public static <T extends Collection<?>> void doIfNotEmpty(T value, Consumer<T> consumer) {
+        if (isNotEmpty(value)) {
+            consumer.accept(value);
+        }
+    }
+    
+    /**
+     * 若指定集合value不等于null且长度不等于0,则执行{@link Function#apply(Object)}方法并返回其返回值,否则返回null.
+     * @see #isEmpty(Collection)
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param value 集合对象
+     * @param function {@code Function<T, R>}
+     * @return R 若value等于null或长度等于0,返回null.否则返回{@link Function#apply(Object)}方法返回值.
+     */
+    public static <T extends Collection<?>, R> R doIfNotEmpty(T value, Function<T, R> function) {
+        return isEmpty(value) ? null : function.apply(value);
+    }
+    
+    /**
+     * 若指定Map不等于null且长度不等于0,则执行{@link Consumer#accept(Object)}方法.
+     * 否则直接返回,不做任何操作.
+     * @see #isEmpty(Collection)
+     * @param <T> 入参类型
+     * @param value Map
+     * @param consumer {@code Consumer<T>}
+     */
+    public static <T extends Map<?, ?>> void doIfNotEmpty(T value, Consumer<T> consumer) {
+        if (isNotEmpty(value)) {
+            consumer.accept(value);
+        }
+    }
+    
+    /**
+     * 若指定Map不等于null且长度不等于0,则执行{@link Function#apply(Object)}方法并返回其返回值,否则返回null.
+     * @see #isEmpty(Collection)
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param value Map
+     * @param function {@code Function<T, R>}
+     * @return R 若value等于null或长度等于0,返回null.否则返回{@link Function#apply(Object)}方法返回值.
+     */
+    public static <T extends Map<?, ?>, R> R doIfNotEmpty(T value, Function<T, R> function) {
+        return isEmpty(value) ? null : function.apply(value);
+    }
+    
+    
+    
+    /**
+     * @author ZhaoQingJiang
+     */
+    @FunctionalInterface
+    public interface ThrowableConsumer<T> {
+        
+        void accept(T t) throws Throwable;
+    }
+    
+    /**
+     * @author ZhaoQingJiang
+     */
+    @FunctionalInterface
+    public interface ThrowableFunction<T, R> {
+        
+        R apply(T t) throws Throwable;
+    }
+    
+    /**
+     * @author ZhaoQingJiang
+     */
+    static class LambdaRuntimeException extends RuntimeException {
+
+        private static final long serialVersionUID = 5847492109904385413L;
+
+        public LambdaRuntimeException(Throwable cause) {
+            super(cause);
+        }
+    }
+    
+    
+    
+    
 }
