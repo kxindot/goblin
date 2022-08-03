@@ -1,7 +1,7 @@
 package com.kxindot.goblin.thread;
 
 import static com.kxindot.goblin.Objects.isBlank;
-import static com.kxindot.goblin.Objects.newUnmodifiedEmptyList;
+import static com.kxindot.goblin.Objects.unmodifiableEmptyList;
 import static com.kxindot.goblin.Objects.requireNotNull;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -69,7 +69,7 @@ public class ThreadExecutor extends AbstractExecutorService {
 
     @Override
     public List<Runnable> shutdownNow() {
-        return wrapped ? wrapper.shutdownNow() : newUnmodifiedEmptyList();
+        return wrapped ? wrapper.shutdownNow() : unmodifiableEmptyList();
     }
 
     @Override

@@ -4,6 +4,7 @@ import static com.kxindot.goblin.Objects.convert;
 import static com.kxindot.goblin.Objects.isEmpty;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -106,6 +107,17 @@ public final class Reflections {
         }
         throw new ReflectionException(String.
                 format("Can't find constructor whith parameterCount=%d on class %s", len, cls.getName()));
+    }
+    
+    /**
+     * 创建一个指定长度的数组对象
+     * @param cls 数组类型
+     * @param length 数组长度
+     * @return T[] - 数组对象
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] newArrayInstance(Class<? extends T[]> cls, int length) {
+        return (T[]) Array.newInstance(cls.getComponentType(), length);
     }
     
     /**
