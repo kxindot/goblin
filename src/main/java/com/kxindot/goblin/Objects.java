@@ -421,7 +421,7 @@ public final class Objects {
      * @return 若传入的字符串(value)不等于空字符串("")或null,则返回该字符串,反之返回默认字符串(defaultValue).
      */
     public static <T extends CharSequence> T defaultIfEmpty(T value, T defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -433,7 +433,7 @@ public final class Objects {
      * @return 若传入的字符串(value)不等于空串(空字符串或除空格外不包含其他字符),则返回该字符串,反之返回默认字符串(defaultValue).
      */
     public static <T extends CharSequence> T defaultIfBlank(T value, T defaultValue) {
-        return isBlank(value) ? value : defaultValue;
+        return isBlank(value) ? defaultValue : value;
     }
     
     /**
@@ -1357,7 +1357,7 @@ public final class Objects {
      * @return 若传入的byte数组不为null且长度不等于0,则返回该byte数组,反之返回默认值(defaultValue).
      */
     public static byte[] defaultIfEmpty(byte[] value, byte[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1368,7 +1368,7 @@ public final class Objects {
      * @return 若传入的short数组不为null且长度不等于0,则返回该short数组,反之返回默认值(defaultValue).
      */
     public static short[] defaultIfEmpty(short[] value, short[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1379,7 +1379,7 @@ public final class Objects {
      * @return 若传入的int数组不为null且长度不等于0,则返回该int数组,反之返回默认值(defaultValue).
      */
     public static int[] defaultIfEmpty(int[] value, int[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1390,7 +1390,7 @@ public final class Objects {
      * @return 若传入的long数组不为null且长度不等于0,则返回该long数组,反之返回默认值(defaultValue).
      */
     public static long[] defaultIfEmpty(long[] value, long[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1401,7 +1401,7 @@ public final class Objects {
      * @return 若传入的float数组不为null且长度不等于0,则返回该float数组,反之返回默认值(defaultValue).
      */
     public static float[] defaultIfEmpty(float[] value, float[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1412,7 +1412,7 @@ public final class Objects {
      * @return 若传入的double数组不为null且长度不等于0,则返回该double数组,反之返回默认值(defaultValue).
      */
     public static double[] defaultIfEmpty(double[] value, double[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1423,7 +1423,7 @@ public final class Objects {
      * @return 若传入的对象数组不为null且长度不等于0,则返回该对象数组,反之返回默认值(defaultValue).
      */
     public static <T> T[] defaultIfEmpty(T[] value, T[] defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     /**
@@ -1691,7 +1691,7 @@ public final class Objects {
      * @return 若传入的集合不为null且长度不等于0,则返回该集合,反之返回默认值(defaultValue).
      */
     public static <T extends Collection<?>> T defaultIfEmpty(T value, T defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     public static <T> List<T> newArrayList() {
@@ -1875,7 +1875,7 @@ public final class Objects {
      * @return 若传入的Map不为null且长度不等于0,则返回该Map,反之返回默认值(defaultValue).
      */
     public static <T extends Map<?, ?>> T defaultIfEmpty(T value, T defaultValue) {
-        return isEmpty(value) ? value : defaultValue;
+        return isEmpty(value) ? defaultValue : value;
     }
     
     public static <K, V> Map<K, V> newHashMap() {
