@@ -1,4 +1,4 @@
-package com.kxindot.goblin;
+package com.kxindot.goblin.bean;
 
 import java.util.Collection;
 import java.util.List;

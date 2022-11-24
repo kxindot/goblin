@@ -1,6 +1,6 @@
 package com.kxindot.goblin;
 
-import static com.kxindot.goblin.reflection.Reflections.newArrayInstance;
+import static com.kxindot.goblin.Reflections.newArrayInstance;
 
 import java.io.IOException;
 import java.io.PrintWriter;
