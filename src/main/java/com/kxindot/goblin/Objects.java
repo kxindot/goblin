@@ -647,6 +647,19 @@ public final class Objects {
     }
     
     /**
+     * 字符串重复拼接
+     * @param str
+     * @param time
+     * @return
+     */
+    public static String stringRepeat(String str, int time) {
+        requireTrue(time > 0, "重复次数必须大于零: " + time);
+        StringBuilder b = new StringBuilder(str);
+        for (int i = 0; i < time; i++) b.append(str);
+        return b.toString();
+    }
+    
+    /**
      * 
      * @param cs
      * @param startIndex
