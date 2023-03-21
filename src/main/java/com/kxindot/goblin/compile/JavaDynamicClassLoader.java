@@ -1,11 +1,11 @@
 package com.kxindot.goblin.compile;
 
 import static com.kxindot.goblin.Classes.getAvailableClassLoader;
-import static com.kxindot.goblin.IO.newIORuntimeException;
 import static com.kxindot.goblin.IO.readBytes;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.silentThrex;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
 import java.io.ByteArrayInputStream;
@@ -103,7 +103,7 @@ public class JavaDynamicClassLoader extends ClassLoader {
                 try (InputStream in = file.openInputStream()) {
                     bytes = readBytes(in);
                 } catch (IOException e) {
-                    throw newIORuntimeException(e);
+                    silentThrex(e);
                 }
             }
         }
