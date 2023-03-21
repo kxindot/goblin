@@ -1,6 +1,7 @@
 package com.kxindot.goblin.random;
 
 import static com.kxindot.goblin.Objects.newArrayList;
+import static com.kxindot.goblin.Objects.requireTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -119,6 +120,12 @@ public final class WeightRandomChooser<T> implements RandomChooser<WeightItem<T>
         items.remove(item);
         prepared = false;
     }
+    
+    @Override
+    public void clear() {
+        items = newArrayList();
+        prepared = false;
+    }
 
     /**
      * 按权重比例随机选择项目。
@@ -131,6 +138,17 @@ public final class WeightRandomChooser<T> implements RandomChooser<WeightItem<T>
         int pos = Arrays.binarySearch(section, num);
         WeightItem<T> item = pos >= 0 ? items.get(pos)
                 : ((pos = -pos - 1) < section.length && num < section[pos]) ? items.get(pos) : items.get(0);
+        return item;
+    }
+    
+    @Override
+    public WeightItem<T> choose(int round) {
+        requireTrue(round > 0, "不能小于一轮!");
+        WeightItem<T> item = null;
+        while (round > 0) {
+            item = choose();
+            round--;
+        }
         return item;
     }
 

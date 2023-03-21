@@ -65,6 +65,11 @@ public class AverageRandomChooser<T> implements RandomChooser<T> {
     public void remove(T item) {
         chooser.remove(new WeightItem<>(item, 1.0d));
     }
+    
+    @Override
+    public void clear() {
+        chooser.clear();
+    }
 
     /**
      * 等几率随机选择项目。
@@ -74,6 +79,11 @@ public class AverageRandomChooser<T> implements RandomChooser<T> {
     @Override
     public T choose() {
         return chooser.choose().getItem();
+    }
+    
+    @Override
+    public T choose(int round) {
+        return chooser.choose(round).getItem();
     }
 
     @Override

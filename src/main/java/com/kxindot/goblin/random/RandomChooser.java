@@ -37,6 +37,11 @@ public interface RandomChooser<T> {
     void remove(T item);
     
     /**
+     * 清空选择器中的所有项目。
+     */
+    void clear();
+    
+    /**
      * 返回添加到选择器中的项目集合。
      * @return {@code Collection<T>}
      */
@@ -48,5 +53,13 @@ public interface RandomChooser<T> {
      * @throws IllegalArgumentException 若未添加任何项目至选择器,则抛出此异常
      */
     T choose();
+    
+    /**
+     * 随机选择项目（选择round轮，返回最后一次选择结果）。
+     * @param round int
+     * @return T 项目
+     * @throws IllegalArgumentException 若未添加任何项目至选择器,则抛出此异常
+     */
+    T choose(int round);
     
 }
