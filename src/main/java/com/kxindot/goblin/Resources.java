@@ -5,7 +5,6 @@ import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.getAvailableClassLoader;
 import static com.kxindot.goblin.Classes.toPackagePattern;
 import static com.kxindot.goblin.Classes.toPathPattern;
-import static com.kxindot.goblin.IO.newIORuntimeException;
 import static com.kxindot.goblin.Objects.Colon;
 import static com.kxindot.goblin.Objects.Dot;
 import static com.kxindot.goblin.Objects.EMP;
@@ -15,6 +14,7 @@ import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.silentThrex;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import com.kxindot.goblin.IO.IORuntimeException;
 import com.kxindot.goblin.exception.RuntimeException;
 
 /**
@@ -120,11 +119,11 @@ public class Resources {
         if (classLoader == null) {
             classLoader = getAvailableClassLoader();
         }
-        Enumeration<URL> resources;
+        Enumeration<URL> resources = null;
         try {
             resources = classLoader.getResources(packageName);
         } catch (IOException e) {
-            throw newIORuntimeException(e);
+            silentThrex(e);
         }
         URL url = null;
         Collection<E> c = newHashSet();
@@ -498,7 +497,7 @@ public class Resources {
                     list.add(path);
                 }
             } catch (IOException ex) {
-                throw newIORuntimeException(ex);
+                silentThrex(ex);
             }
             return list;
         }
@@ -513,7 +512,7 @@ public class Resources {
                 }
             }
         } catch (IOException e) {
-            throw newIORuntimeException(e);
+            silentThrex(e);
         }
         return list;
     }

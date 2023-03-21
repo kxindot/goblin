@@ -30,12 +30,18 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.kxindot.goblin.exception.RuntimeException;
+import com.kxindot.goblin.asserts.Asserts;
+import com.kxindot.goblin.asserts.CharSequenceAssert;
+import com.kxindot.goblin.asserts.CollectionAssert;
+import com.kxindot.goblin.asserts.MapAssert;
+import com.kxindot.goblin.asserts.NumberAssert;
 import com.kxindot.goblin.map.CaseInsensitiveConcurrentHashMap;
 import com.kxindot.goblin.map.CaseInsensitiveHashMap;
 import com.kxindot.goblin.map.CaseInsensitiveLinkedHashMap;
@@ -504,7 +510,7 @@ public final class Objects {
      * @return String
      */
     public static String stringFormat(String format, Object... args) {
-        return String.format(format, args);
+        return isBlank(format) || isEmpty(args) ? format : String.format(format, args);
     }
     
     /**
@@ -842,22 +848,165 @@ public final class Objects {
         return subStr;
     }
     
+    /**-------------------异常-------------------**/
+    
+    public static <E extends Throwable> void threx(Supplier<E> supplier) throws E {
+        throw supplier.get();
+    }
+    
+    public static <E extends Throwable> void threx(Function<String, E> function, String message) throws E {
+        threx(function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    public static <E extends Throwable> void threx(Function<String, E> function, String format, Object... args) throws E {
+        throw function.apply(stringFormat(format, args));
+    }
+    
+    public static <E extends Throwable> void threx(Function<Throwable, E> function, Throwable exception) throws E {
+        throw function.apply(exception);
+    }
+    
+    public static <E extends Throwable> void threx(BiFunction<String, Throwable, E> function, Throwable exception, String message) throws E {
+        threx(function, exception, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    public static <E extends Throwable> void threx(BiFunction<String, Throwable, E> function, Throwable exception, String format, Object... args) throws E {
+        throw function.apply(stringFormat(format, args), exception);
+    }
+    
+    public static <E extends Throwable> void silentThrex(Supplier<E> supplier) {
+        silentThrex(supplier.get());
+    }
+    
+    public static <E extends Throwable> void silentThrex(Function<String, E> function, String message) {
+        silentThrex(function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    public static <E extends Throwable> void silentThrex(Function<String, E> function, String format, Object... args) {
+        silentThrex(function.apply(stringFormat(format, args)));
+    }
+    
+    public static <E extends Throwable> void silentThrex(Function<Throwable, E> function, Throwable exception) {
+        silentThrex(function.apply(exception));
+    }
+    
+    public static <E extends Throwable> void silentThrex(BiFunction<String, Throwable, E> function, Throwable exception, String message) {
+        silentThrex(function, exception, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    public static <E extends Throwable> void silentThrex(BiFunction<String, Throwable, E> function, Throwable exception, String format, Object... args) {
+        silentThrex(function.apply(stringFormat(format, args), exception));
+    }
+    
+    public static void silentThrex(Throwable exception) {
+        silentThrex(exception, null);
+    }
+    
+    public static void silentThrex(Throwable exception, String message) {
+        silentThrex(exception, message, EMPTY_OBJ_ARRAY);
+    }
+
+    public static void silentThrex(Throwable exception, String format, Object... args) {
+        if (isNotNull(exception)) {
+            if (RuntimeException.class.isInstance(exception)) 
+                throw RuntimeException.class.cast(exception);
+            format = stringFormat(format, args);
+            if (isBlank(format)) 
+                format = exception.getMessage();
+            format = stringFormat("Cause: %s, Message: %s", exception.getClass().getSimpleName(), format);
+            throw new WrapperException(format, exception);
+        }
+    }
+    
+    public static boolean isWrapperException(Throwable throwable) {
+        return isNull(throwable) ? false : WrapperException.class.isInstance(throwable);
+    }
+    
+    public static Throwable unwrapperException(Throwable throwable) {
+        return !isWrapperException(throwable) ?  throwable 
+                : WrapperException.class.cast(throwable).getCause();
+    }
+    
     /**
      * 
      * @param ex
      * @return
      */
     public static String toString(Throwable ex) {
+        String stackTrace = null;
         try (StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw)) {
             ex.printStackTrace(pw);
-            return sw.toString();
+            stackTrace = sw.toString();
         } catch (IOException e) {
-            throw IO.newIORuntimeException(e);
+            silentThrex(e);
         }
+        return stackTrace;
     }
     
+    
+    
+    /**
+     * @author ZhaoQingJiang
+     */
+    static class WrapperException extends RuntimeException {
+
+        private static final long serialVersionUID = -7695946876494794480L;
+
+        public WrapperException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+    }
+    
+    
+    
+    
     /**-------------------断言-------------------**/
+    
+    /**
+     * 
+     * @param <T>
+     * @param cs
+     * @return
+     */
+    public static <T extends CharSequence> CharSequenceAssert<T> asserts(T cs) {
+        return Asserts.of(cs);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param number
+     * @return
+     */
+    public static <T extends Number & Comparable<T>> NumberAssert<T> asserts(T number) {
+        return Asserts.of(number);
+    }
+    
+    /**
+     * 
+     * @param <E>
+     * @param <T>
+     * @param collection
+     * @return
+     */
+    public static <E, T extends Collection<E>> CollectionAssert<E, T> asserts(T collection) {
+        return Asserts.of(collection);
+    }
+    
+    /**
+     * 
+     * @param <K>
+     * @param <V>
+     * @param <T>
+     * @param map
+     * @return
+     */
+    public static <K, V, T extends Map<K, V>> MapAssert<K, V, T> asserts(T map) {
+        return Asserts.of(map);
+    }
+    
     
     /**
      * 断言对象等于null
@@ -866,7 +1015,22 @@ public final class Objects {
      * @throws IllegalArgumentException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNull(T obj) {
-        return requireNotNull(obj, "input object require to be null");
+        return requireNull(obj, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param supplier
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNull(T obj, Supplier<E> supplier) {
+        if (obj != null) {
+            throw supplier.get();
+        }
+        return obj;
     }
     
     /**
@@ -877,8 +1041,47 @@ public final class Objects {
      * @throws IllegalArgumentException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNull(T obj, String message) {
+        return requireNull(obj, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param obj
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T> T requireNull(T obj, String format, Object... args) {
+        return requireNull(obj, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param function
+     * @param message
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNull(T obj, Function<String, E> function, String message) {
+        return requireNull(obj, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNull(T obj, Function<String, E> function, String format, Object... args) {
         if (obj != null) {
-            throw new IllegalArgumentException(message);
+            throw function.apply(stringFormat(format, args));
         }
         return obj;
     }
@@ -890,7 +1093,22 @@ public final class Objects {
      * @throws IllegalArgumentException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNotNull(T obj) {
-        return requireNotNull(obj, "input object require not to be null");
+        return requireNotNull(obj, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param supplier
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNotNull(T obj, Supplier<E> supplier) {
+        if (obj == null) {
+            throw supplier.get();
+        }
+        return obj;
     }
     
     /**
@@ -901,8 +1119,48 @@ public final class Objects {
      * @throws NullPointerException 若断言不成立,则抛出该异常
      */
     public static <T> T requireNotNull(T obj, String message) {
+        return requireNotNull(obj, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNotNull(T obj, String format, Object... args) {
+        return requireNotNull(obj, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param function
+     * @param format
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNotNull(T obj, Function<String, E> function, String format) {
+        return requireNotNull(obj, function, format, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param obj
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T, E extends RuntimeException> T requireNotNull(T obj, Function<String, E> function, String format, Object... args) {
         if (obj == null) {
-            throw new NullPointerException(message);
+            throw function.apply(stringFormat(format, args));
         }
         return obj;
     }
@@ -918,6 +1176,21 @@ public final class Objects {
     }
     
     /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param supplier
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, Supplier<E> supplier) {
+        if (isEmpty(cs)) {
+            throw supplier.get();
+        }
+        return cs;
+    }
+    
+    /**
      * 断言字符串不等于null且不等于""
      * @param cs 断言对象
      * @param message 断言不成立时的异常信息
@@ -925,8 +1198,48 @@ public final class Objects {
      * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotEmpty(T cs, String message) {
+        return requireNotEmpty(cs, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, String format, Object... args) {
+        return requireNotEmpty(cs, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param function
+     * @param format
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, Function<String, E> function, String format) {
+        return requireNotEmpty(cs, function, format, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, Function<String, E> function, String format, Object... args) {
         if (isEmpty(cs)) {
-            throw new BlankCharSequenceException(message);
+            throw function.apply(stringFormat(format, args));
         }
         return cs;
     }
@@ -938,7 +1251,22 @@ public final class Objects {
      * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotBlank(T cs) {
-        return requireNotBlank(cs, "input charsequence require not be null or blank");
+        return requireNotBlank(cs, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param supplier
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, Supplier<E> supplier) {
+        if (isBlank(cs)) {
+            throw supplier.get();
+        }
+        return cs;
     }
     
     /**
@@ -949,8 +1277,48 @@ public final class Objects {
      * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
      */
     public static <T extends CharSequence> T requireNotBlank(T cs, String message) {
+        return requireNotBlank(cs, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, String format, Object... args) {
+        return requireNotBlank(cs, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param function
+     * @param format
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, Function<String, E> function, String format) {
+        return requireNotBlank(cs, function, format, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, Function<String, E> function, String format, Object... args) {
         if (isBlank(cs)) {
-            throw new BlankCharSequenceException(message);
+            throw function.apply(stringFormat(format, args));
         }
         return cs;
     }
@@ -961,8 +1329,23 @@ public final class Objects {
      * @return 若断言成立则返回断言对象
      * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
-    public static <T> T[] requireNotEmpty(T[] a) {
-        return requireNotEmpty(a, "input array require not be null or empty");
+    public static <T> T[] requireNotEmpty(T[] array) {
+        return requireNotEmpty(array, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param array
+     * @param supplier
+     * @return
+     */
+    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, Supplier<E> supplier) {
+        if (isEmpty(array)) {
+            throw supplier.get();
+        }
+        return array;
     }
     
     /**
@@ -972,35 +1355,130 @@ public final class Objects {
      * @return 若断言成立则返回断言对象
      * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
-    public static <T> T[] requireNotEmpty(T[] a, String message) {
-        if (isEmpty(a)) {
-            throw new EmptyCollectionException(message);
+    public static <T> T[] requireNotEmpty(T[] array, String message) {
+        return requireNotEmpty(array, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param array
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, String format, Object... args) {
+        return requireNotEmpty(array, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param array
+     * @param function
+     * @param format
+     * @return
+     */
+    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, Function<String, E> function, String format) {
+        return requireNotEmpty(array, function, format, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <T>
+     * @param <E>
+     * @param array
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, Function<String, E> function, String format, Object... args) {
+        if (isEmpty(array)) {
+            throw function.apply(stringFormat(format, args));
         }
-        return a;
+        return array;
     }
     
     /**
      * 断言集合不等于null且size > 0
-     * @param c 断言对象
+     * @param collection 断言对象
      * @return 若断言成立则返回断言对象
      * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
-    public static <C extends Collection<?>> C requireNotEmpty(C c) {
-        return requireNotEmpty(c, "input collection require not be null or empty");
+    public static <C extends Collection<?>> C requireNotEmpty(C collection) {
+        return requireNotEmpty(collection, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <C>
+     * @param <E>
+     * @param collection
+     * @param supplier
+     * @return
+     */
+    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, Supplier<E> supplier) {
+        if (isEmpty(collection)) {
+            throw supplier.get();
+        }
+        return collection;
     }
     
     /**
      * 断言集合不等于null且size > 0
-     * @param c 断言对象
+     * @param collection 断言对象
      * @param message 断言不成立时的异常信息
      * @return 若断言成立则返回断言对象
      * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
-    public static <C extends Collection<?>> C requireNotEmpty(C c, String message) {
-        if (isEmpty(c)) {
-            throw new EmptyCollectionException(message);
+    public static <C extends Collection<?>> C requireNotEmpty(C collection, String message) {
+        return requireNotEmpty(collection, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <C>
+     * @param <E>
+     * @param collection
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, String format, Object... args) {
+        return requireNotEmpty(collection, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <C>
+     * @param <E>
+     * @param collection
+     * @param function
+     * @param format
+     * @return
+     */
+    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, Function<String, E> function, String format) {
+        return requireNotEmpty(collection, function, format, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <C>
+     * @param <E>
+     * @param collection
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, Function<String, E> function, String format, Object... args) {
+        if (isEmpty(collection)) {
+            throw function.apply(stringFormat(format, args));
         }
-        return c;
+        return collection;
     }
     
     /**
@@ -1010,7 +1488,22 @@ public final class Objects {
      * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <M extends Map<?, ?>> M requireNotEmpty(M map) {
-        return requireNotEmpty(map, "input map require not be null or empty");
+        return requireNotEmpty(map, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <M>
+     * @param <E>
+     * @param map
+     * @param supplier
+     * @return
+     */
+    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, Supplier<E> supplier) {
+        if (isEmpty(map)) {
+            throw supplier.get();
+        }
+        return map;
     }
     
     /**
@@ -1021,22 +1514,69 @@ public final class Objects {
      * @throws EmptyCollectionException 若断言不成立,则抛出该异常
      */
     public static <M extends Map<?, ?>> M requireNotEmpty(M map, String message) {
+        return requireNotEmpty(map, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <M>
+     * @param <E>
+     * @param map
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, String format, Object... args) {
+        return requireNotEmpty(map, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 
+     * @param <M>
+     * @param <E>
+     * @param map
+     * @param function
+     * @param format
+     * @return
+     */
+    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, Function<String, E> function, String format) {
+        return requireNotEmpty(map, function, format, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <M>
+     * @param <E>
+     * @param map
+     * @param function
+     * @param format
+     * @param args
+     * @return
+     */
+    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, Function<String, E> function, String format, Object... args) {
         if (isEmpty(map)) {
-            throw new EmptyCollectionException(message);
+            throw function.apply(stringFormat(format, args));
         }
         return map;
     }
     
     /**
-     * 断言expression等于false
-     * @param expression 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * 
+     * @param expression
      */
-    public static void requireFalse(boolean expression, String message) {
+    public static void requireTrue(boolean expression) {
+        requireTrue(expression, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 
+     * @param <E>
+     * @param expression
+     * @param supplier
+     */
+    public static <E extends RuntimeException> void requireTrue(boolean expression, Supplier<E> supplier) {
         if (!expression) {
-            throw new IllegalArgumentException(message);
+            throw supplier.get();
         }
     }
     
@@ -1053,51 +1593,56 @@ public final class Objects {
         }
     }
     
+    /**
+     * 
+     * @param expression
+     * @param format
+     * @param args
+     */
+    public static void requireTrue(boolean expression, String format, Object... args) {
+        requireTrue(expression, IllegalArgumentException::new, format, args);
+    }
     
     /**
-     * 空字符串警告异常(字符串为null或空串)
-     * @author zhaoqingjiang
+     * 
+     * @param <E>
+     * @param expression
+     * @param function
+     * @param message
      */
-    public static class BlankCharSequenceException extends RuntimeException {
-
-        private static final long serialVersionUID = -479895746434262540L;
-
-        public BlankCharSequenceException() {
-            super();
+    public static <E extends RuntimeException> void requireTrue(boolean expression, Function<String, E> function, String message) {
+        requireTrue(expression, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 
+     * @param <E>
+     * @param expression
+     * @param function
+     * @param format
+     * @param args
+     */
+    public static <E extends RuntimeException> void requireTrue(boolean expression, Function<String, E> function, String format, Object... args) {
+        if (!expression) {
+            throw function.apply(stringFormat(format, args));
         }
-        
-        public BlankCharSequenceException(String message) {
-            super(message);
+    }
+    
+    /**
+     * 断言expression等于false
+     * @param expression 断言对象
+     * @param message 断言不成立时的异常信息
+     * @return 若断言成立则返回断言对象
+     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     */
+    public static void requireFalse(boolean expression, String message) {
+        if (!expression) {
+            throw new IllegalArgumentException(message);
         }
-
-        public BlankCharSequenceException(String message, Object... args) {
-            super(message, args);
-        }
-
     }
     
     
-    /**
-     * 空集合警告异常
-     * @author zhaoqingjiang
-     */
-    public static class EmptyCollectionException extends RuntimeException {
-
-        private static final long serialVersionUID = -5910822621584176391L;
-
-        public EmptyCollectionException() {
-            super();
-        }
-        
-        public EmptyCollectionException(String message) {
-            super(message);
-        }
-
-        public EmptyCollectionException(String message, Object... args) {
-            super(message, args);
-        }
-
-    }
+    
     
     /**-------------------Class-------------------**/
     
@@ -2028,42 +2573,6 @@ public final class Objects {
     
     /**-------------------Lambda-------------------**/
     
-    
-    /**
-     * 包装FunctionalInterface: {@link Consumer},使其可抛出未检异常{@link Exception}.
-     * @see ThrowableConsumer
-     * @param <T> 入参类型
-     * @param consumer {@code ThrowableConsumer<T>}
-     * @return {@code Consumer<T>}
-     */
-    public static <T> Consumer<T> consumer(ThrowableConsumer<T> consumer) {
-        return p -> {
-            try {
-                consumer.accept(p);
-            } catch (Throwable e) {
-                throw new LambdaRuntimeException(e);
-            }
-        };
-    }
-    
-    /**
-     * 包装FunctionalInterface: {@link Function},使其可抛出未检异常{@link Exception}.
-     * @see ThrowableFunction
-     * @param <T> 入参类型
-     * @param <R> 出参类型
-     * @param consumer {@code ThrowableFunction<T>}
-     * @return {@code Function<T>}
-     */
-    public static <T, R> Function<T, R> function(ThrowableFunction<T, R> function) {
-        return p -> {
-            try {
-                return function.apply(p);
-            } catch (Throwable e) {
-                throw new LambdaRuntimeException(e);
-            }
-        };
-    }
-    
     /**
      * 若指定对象value不等于null,则执行{@link Consumer#accept(Object)}方法.
      * 否则直接返回,不做任何操作.
@@ -2197,7 +2706,40 @@ public final class Objects {
         return isEmpty(value) ? null : function.apply(value);
     }
     
+    /**
+     * 包装FunctionalInterface: {@link Consumer},使其可抛出未检异常{@link Exception}.
+     * @see ThrowableConsumer
+     * @param <T> 入参类型
+     * @param consumer {@code ThrowableConsumer<T>}
+     * @return {@code Consumer<T>}
+     */
+    public static <T> Consumer<T> consumer(ThrowableConsumer<T> consumer) {
+        return p -> {
+            try {
+                consumer.accept(p);
+            } catch (Throwable e) {
+                throw new LambdaRuntimeException(e);
+            }
+        };
+    }
     
+    /**
+     * 包装FunctionalInterface: {@link Function},使其可抛出未检异常{@link Exception}.
+     * @see ThrowableFunction
+     * @param <T> 入参类型
+     * @param <R> 出参类型
+     * @param consumer {@code ThrowableFunction<T>}
+     * @return {@code Function<T>}
+     */
+    public static <T, R> Function<T, R> function(ThrowableFunction<T, R> function) {
+        return p -> {
+            try {
+                return function.apply(p);
+            } catch (Throwable e) {
+                throw new LambdaRuntimeException(e);
+            }
+        };
+    }
     
     /**
      * @author ZhaoQingJiang
@@ -2228,8 +2770,5 @@ public final class Objects {
             super(cause);
         }
     }
-    
-    
-    
     
 }

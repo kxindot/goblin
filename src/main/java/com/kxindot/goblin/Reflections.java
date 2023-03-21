@@ -2,6 +2,8 @@ package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Objects.convert;
 import static com.kxindot.goblin.Objects.isEmpty;
+import static com.kxindot.goblin.Objects.isNull;
+import static com.kxindot.goblin.Objects.requireTrue;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
@@ -9,9 +11,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.typeconvert.TypeConvertException;
@@ -44,6 +49,62 @@ public final class Reflections {
     public static PropertyDescriptor findPropertyDescriptor(Class<?> cls, String fieldName) {
         
         return null;
+    }
+    
+    public static boolean isGeneric(Class<?> cls) {
+        return cls.getTypeParameters().length > 0;
+    }
+    
+    public static Class<?> findGenericParameterType(Class<?> cls, int index) {
+        Class<?> scls = cls.getSuperclass();
+        if (scls == Object.class) 
+            
+        requireTrue(index >= 0, "不合法的下标值: %d", index);
+        requireTrue(scls != Object.class, "%s没有继承的父类", cls.getSimpleName());
+        int len = scls.getTypeParameters().length;
+        requireTrue(len > 0, "%s的父类%s不是泛型类", cls.getSimpleName(), scls.getSimpleName());
+        requireTrue(len >= index, null, Empty_Objects);
+        Type st = cls.getGenericSuperclass();
+        requireTrue(st != null && st instanceof ParameterizedType, "类%s之父类不是泛型类!", cls.getSimpleName());
+        
+        return null;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <C extends P, P> Class<?> findGenericParameterType(Class<C> source, Class<P> target, int index) {
+        requireTrue(index > -1, "Invalid index value : " + index);
+        if (isNull(target))
+            target = (Class<P>) source.getSuperclass();
+        int len = target.getTypeParameters().length;
+        if (len == 0)
+            throw new IllegalArgumentException(target.getName() + " is not a generic class or interface");
+        if (index >= len)
+            throw new IndexOutOfBoundsException(target.getName() + " generic parameter len: " + len + ", index: " + index);
+        Type t = target.isInterface() ? findExactGenericInterfaceType(source, target) : findExactGenericClassType(source, target);
+        return Class.class.cast(ParameterizedType.class.cast(t).getActualTypeArguments()[index]);
+    }
+    
+    private static Type findExactGenericClassType(Class<?> source, Class<?> target) {
+        Type t = source.getGenericSuperclass();
+        return ParameterizedType.class.cast(t).getRawType() == target ? t : findExactGenericClassType(Class.class.cast(t), target);
+    }
+    
+    /**
+     * find generic type
+     */
+    private static Type findExactGenericInterfaceType(Class<?> source, Class<?> target) {
+        Type[] ts = source.getGenericInterfaces();
+        if (isEmpty(ts)) {
+            return findExactGenericInterfaceType(source.getSuperclass(), target);
+        }
+        Type t = Stream.of(ts).filter(e -> e instanceof ParameterizedType 
+                && ParameterizedType.class.cast(e).getRawType() == target).findFirst().orElse(null);
+        if (t == null) {
+            t = Stream.of(ts).filter(e -> (!(e instanceof ParameterizedType))
+                    && target.isAssignableFrom(Class.class.cast(e))).findFirst().get();
+            return findExactGenericInterfaceType(Class.class.cast(t), target);
+        }
+        return t;
     }
     
     

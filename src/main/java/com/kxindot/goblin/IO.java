@@ -2,21 +2,34 @@ package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.Objects.isNotBlank;
+import static com.kxindot.goblin.Objects.silentThrex;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
 
 import com.kxindot.goblin.exception.RuntimeException;
 
 /**
  * @author zhaoqingjiang
  */
-public class IO {
+public interface IO {
+    
+    public interface IOInput {
+        void read();
+        
+        void read(int bufSize);
+    }
+    
+    public interface IOOutput {
+        
+    }
     
     public static String readString(URI uri) {
         return new String(readBytes(uri));
@@ -31,31 +44,37 @@ public class IO {
     }
     
     public static byte[] readBytes(URI uri) {
+        InputStream iStream = null;
         try {
-            return readBytes(uri.toURL().openStream());
+            iStream = uri.toURL().openStream();
         } catch (IOException e) {
-            throw new IORuntimeException(e);
+            silentThrex(e);
         }
+        return readBytes(iStream);
     }
 
     public static byte[] readBytes(URL url) {
+        InputStream iStream = null;
         try {
-            return readBytes(url.openStream());
+            iStream = url.openStream();
         } catch (IOException e) {
-            throw new IORuntimeException(e);
+            silentThrex(e);
         }
+        return readBytes(iStream);
     }
     
     public static byte[] readBytes(InputStream inputStream) {
+        byte[] buf = null;
         try (InputStream in = inputStream;
                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             int i;
-            byte[] buf = new byte[1024 * 1024];
+            buf = new byte[1024 * 1024];
             while ((i = in.read(buf)) != -1) {out.write(buf, 0, i);}
             return out.toByteArray();
         } catch (IOException e) {
-            throw new IORuntimeException(e);
+            silentThrex(e);
         }
+        return buf;
     }
     
     
@@ -73,57 +92,7 @@ public class IO {
             byte[] buf = new byte[1024 * 1024];
             while ((i = in.read(buf)) != -1) {outputStream.write(buf, 0, i);}
         } catch (IOException e) {
-            throw new IORuntimeException(e);
+            throw new RuntimeException();
         }
     }
-    
-    /**
-     * Create a new {@link IORuntimeException}
-     * @param cause Throwable
-     * @return IORuntimeException
-     */
-    public static IORuntimeException newIORuntimeException(IOException cause) {
-        return newIORuntimeException(cause, null);
-    }
-    
-    /**
-     * Create a new {@link IORuntimeException}
-     * @param cause Throwable
-     * @param message String
-     * @param args {@code Object...}
-     * @return IORuntimeException
-     */
-    public static IORuntimeException newIORuntimeException(IOException cause, String message, Object... args) {
-        String msg = cause.getMessage();
-        if (isNotBlank(msg)) {
-            msg = "Cause : " + msg;
-            message = isBlank(message) ? msg : String.join("; ", message, msg);
-        }
-        return newIORuntimeException(cause, message, args);
-    }
-
-    
-    /**
-     * This customized exception implements {@link RuntimeException}.
-     * It is designed to wrap {@link IOException}, and the developer won't 
-     * check {@link IOException} all the time.
-     * @author zhaoqingjiang
-     */
-    public static class IORuntimeException extends RuntimeException {
-
-        private static final long serialVersionUID = 7496540237542866176L;
-
-        public IORuntimeException(IOException cause, String message, Object... args) {
-            super(cause, message, args);
-        }
-
-        public IORuntimeException(IOException cause, String message) {
-            super(cause, message);
-        }
-
-        public IORuntimeException(IOException cause) {
-            super(cause);
-        }
-    }
-    
 }
