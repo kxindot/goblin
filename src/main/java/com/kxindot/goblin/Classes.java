@@ -189,6 +189,10 @@ public final class Classes {
         return false;
     }
     
+    public static boolean isGeneric(Class<?> cls) {
+        return cls.getTypeParameters().length > 0;
+    }
+    
     /**
      * 判断类是否归属于java.lang包
      * @param cls Class
@@ -316,7 +320,7 @@ public final class Classes {
     
     
     /**
-     * 判读类Class是否内部类
+     * 判断类Class是否内部类
      * @param cls 类Class
      * @return boolean
      */

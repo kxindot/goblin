@@ -1,18 +1,14 @@
 package com.kxindot.goblin;
 
-import static com.kxindot.goblin.Objects.isBlank;
-import static com.kxindot.goblin.Objects.isNotBlank;
-import static com.kxindot.goblin.Objects.silentThrex;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
 
 import com.kxindot.goblin.exception.RuntimeException;
 

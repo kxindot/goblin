@@ -1,15 +1,68 @@
 package com.kxindot.goblin;
 
+import static com.kxindot.goblin.Objects.asList;
+import static com.kxindot.goblin.Objects.newArrayList;
+import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Reflections.findGenericParameterType;
+import static com.kxindot.goblin.Reflections.listMethods;
+import static com.kxindot.goblin.Reflections.listMethodsByName;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.kxindot.goblin.testkit.JunitTests;
 
+import lombok.Data;
+
 public class ReflectionTests extends JunitTests {
+    
+    public interface IIBean {
+        void beanTest();
+    }
+    
+    public interface IBean extends IIBean {
+        @Override
+        default void beanTest() {
+            
+        }
+    }
+    
+    
+    @Data
+    public static class Bean implements IBean {
+        private String name;
+        private Integer age;
+
+        @Override
+        public void beanTest() {
+            
+        }
+    }
+    
+    @Data
+    public static class InheritBean extends Bean {
+        private String address;
+        
+        @Override
+        public void beanTest() {
+        }
+    }
+    
+    
+    public static void main(String[] args) throws Exception {
+//        List<Method> list = listMethodsByName(InheritBean.class, "beanTest", true);
+        List<Method> list = listMethods(InheritBean.class, true);
+        
+        list.forEach(System.out::println);
+    }
+    
+    
+    
 
     @Override
     public void beforeEach() {

@@ -1,6 +1,7 @@
 package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Reflections.newArrayInstance;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,7 +31,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -848,89 +848,12 @@ public final class Objects {
         return subStr;
     }
     
-    /**-------------------异常-------------------**/
-    
-    public static <E extends Throwable> void threx(Supplier<E> supplier) throws E {
-        throw supplier.get();
-    }
-    
-    public static <E extends Throwable> void threx(Function<String, E> function, String message) throws E {
-        threx(function, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    public static <E extends Throwable> void threx(Function<String, E> function, String format, Object... args) throws E {
-        throw function.apply(stringFormat(format, args));
-    }
-    
-    public static <E extends Throwable> void threx(Function<Throwable, E> function, Throwable exception) throws E {
-        throw function.apply(exception);
-    }
-    
-    public static <E extends Throwable> void threx(BiFunction<String, Throwable, E> function, Throwable exception, String message) throws E {
-        threx(function, exception, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    public static <E extends Throwable> void threx(BiFunction<String, Throwable, E> function, Throwable exception, String format, Object... args) throws E {
-        throw function.apply(stringFormat(format, args), exception);
-    }
-    
-    public static <E extends Throwable> void silentThrex(Supplier<E> supplier) {
-        silentThrex(supplier.get());
-    }
-    
-    public static <E extends Throwable> void silentThrex(Function<String, E> function, String message) {
-        silentThrex(function, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    public static <E extends Throwable> void silentThrex(Function<String, E> function, String format, Object... args) {
-        silentThrex(function.apply(stringFormat(format, args)));
-    }
-    
-    public static <E extends Throwable> void silentThrex(Function<Throwable, E> function, Throwable exception) {
-        silentThrex(function.apply(exception));
-    }
-    
-    public static <E extends Throwable> void silentThrex(BiFunction<String, Throwable, E> function, Throwable exception, String message) {
-        silentThrex(function, exception, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    public static <E extends Throwable> void silentThrex(BiFunction<String, Throwable, E> function, Throwable exception, String format, Object... args) {
-        silentThrex(function.apply(stringFormat(format, args), exception));
-    }
-    
-    public static void silentThrex(Throwable exception) {
-        silentThrex(exception, null);
-    }
-    
-    public static void silentThrex(Throwable exception, String message) {
-        silentThrex(exception, message, EMPTY_OBJ_ARRAY);
-    }
-
-    public static void silentThrex(Throwable exception, String format, Object... args) {
-        if (isNotNull(exception)) {
-            if (RuntimeException.class.isInstance(exception)) 
-                throw RuntimeException.class.cast(exception);
-            format = stringFormat(format, args);
-            if (isBlank(format)) 
-                format = exception.getMessage();
-            format = stringFormat("Cause: %s, Message: %s", exception.getClass().getSimpleName(), format);
-            throw new WrapperException(format, exception);
-        }
-    }
-    
-    public static boolean isWrapperException(Throwable throwable) {
-        return isNull(throwable) ? false : WrapperException.class.isInstance(throwable);
-    }
-    
-    public static Throwable unwrapperException(Throwable throwable) {
-        return !isWrapperException(throwable) ?  throwable 
-                : WrapperException.class.cast(throwable).getCause();
-    }
     
     /**
+     * 返回异常的格式化栈追踪信息.
      * 
-     * @param ex
-     * @return
+     * @param ex Throwable
+     * @return String 栈追踪信息
      */
     public static String toString(Throwable ex) {
         String stackTrace = null;
@@ -943,24 +866,6 @@ public final class Objects {
         }
         return stackTrace;
     }
-    
-    
-    
-    /**
-     * @author ZhaoQingJiang
-     */
-    static class WrapperException extends RuntimeException {
-
-        private static final long serialVersionUID = -7695946876494794480L;
-
-        public WrapperException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-    }
-    
-    
-    
     
     /**-------------------断言-------------------**/
     

@@ -5,7 +5,7 @@ import static com.kxindot.goblin.IO.readBytes;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
 import static com.kxindot.goblin.Objects.requireNotNull;
-import static com.kxindot.goblin.Objects.silentThrex;
+import static com.kxindot.goblin.Throws.silentThrex;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
 import java.io.ByteArrayInputStream;

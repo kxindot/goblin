@@ -45,6 +45,11 @@ public final class CglibProxy {
         return enhancer.create(argTypes, args);
     }
     
+    @SuppressWarnings("unchecked")
+    public static <T> T proxy(SimpleCallback<T> callback) {
+        return (T) enhance(callback.getSuperClass(), callback);
+    }
+    
     /**
      * @author ZhaoQingJiang
      */
