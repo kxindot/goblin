@@ -5,4 +5,6 @@ package com.kxindot.goblin.json;
  */
 public abstract class Json {
 
+    
+    
 }

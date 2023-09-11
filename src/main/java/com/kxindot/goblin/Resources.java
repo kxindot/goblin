@@ -13,8 +13,11 @@ import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newHashSet;
+import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Throws.silentThrex;
+import static com.kxindot.goblin.Throws.threx;
+import static java.io.File.separator;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
@@ -40,15 +43,32 @@ import java.util.jar.JarFile;
 import com.kxindot.goblin.exception.RuntimeException;
 
 /**
+ * 
+ * 
  * @author ZhaoQingJiang
  */
 public class Resources {
     
+    /**
+     * jar包URL协议头: jar
+     */
     public static final String URL_Protocol_Jar = "jar";
+    /**
+     * 文件URL协议头: file
+     */
     public static final String URL_Protocol_File = "file";
-    
+    /**
+     * jar包后缀: .jar
+     */
     public static final String Jar_Extension = ".jar";
+    /**
+     * jar包URL分隔符: !/
+     */
     public static final String Jar_Entry_Sep = "!/";
+    /**
+     * 当前用户主目录
+     */
+    public static final String User_Home = System.getProperty("user.home");
 
     /**
      * Load resources with {@link ClassLoader}.
@@ -517,6 +537,268 @@ public class Resources {
         return list;
     }
     
+    /**
+     * 创建文件.
+     * 若文件已存在或其父文件夹不存在或其不是文件而是文件夹,则抛出异常.
+     * 
+     * @param file 文件
+     * @return Path
+     */
+    public static Path mkFile(String file) {
+        return mkFile(Paths.get(requireNotBlank(file)));
+    }
+    
+    /**
+     * 创建文件.
+     * 若文件已存在或其父文件夹不存在或其不是文件而是文件夹,则抛出异常.
+     * 
+     * @param file 文件
+     * @return File
+     */
+    public static File mkFile(File file) {
+        return mkFile(file.toPath()).toFile();
+    }
+    
+    /**
+     * 创建文件.
+     * 若文件已存在或其父文件夹不存在或其不是文件而是文件夹,则抛出异常.
+     * 
+     * @param file 文件
+     * @return Path
+     */
+    public static Path mkFile(Path file) {
+        if (isDirectory(requireNotNull(file))) {
+            threx(IllegalArgumentException::new, "%s不是一个文件,是一个文件夹!", file);
+        }
+        try {
+            Files.createFile(file);
+        } catch (IOException e) {
+            silentThrex(e);
+        }
+        return file;
+    }
+    
+    /**
+     * 在指定文件夹下创建文件.
+     * 若文件已存在或指定文件夹不存在,则抛出异常.
+     * 
+     * @param directory 文件夹
+     * @param filename 文件名
+     * @return Path
+     */
+    public static Path mkFile(String directory, String filename) {
+        return mkFile(Paths.get(requireNotBlank(directory)), filename);
+    }
+    
+    /**
+     * 在指定文件夹下创建文件.
+     * 若文件已存在或指定文件夹不存在,则抛出异常.
+     * 
+     * @param directory 文件夹
+     * @param filename 文件名
+     * @return File
+     */
+    public static File mkFile(File directory, String filename) {
+        return mkFile(directory.toPath(), filename).toFile();
+    }
+    
+    /**
+     * 在指定文件夹下创建文件.
+     * 若文件已存在或指定文件夹不存在,则抛出异常.
+     * 
+     * @param directory 文件夹
+     * @param filename 文件名
+     * @return Path
+     */
+    public static Path mkFile(Path directory, String filename) {
+        if (filename.contains(separator)) {
+            threx(IllegalArgumentException::new, "%s不是一个合法文件名!", filename);
+        } else if (!isDirectory(directory)) {
+            threx(IllegalArgumentException::new, "%s不是文件夹!", directory);
+        }
+        Path file = Paths.get(requireNotBlank(filename));
+        file = directory.resolve(file);
+        try {
+            Files.createFile(file);
+        } catch (IOException e) {
+            silentThrex(e);
+        }
+        return file;
+    }
+    
+    
+    /**
+     * 创建文件夹.
+     * 若文件夹已存在则会抛出异常.
+     * 若此文件夹的父级文件夹不存在也会抛出异常.
+     * 
+     * @param dir 文件夹路径
+     * @return Path
+     */
+    public static Path mkDir(String dir) {
+        return mkDir(Paths.get(requireNotBlank(dir)));
+    }
+    
+    /**
+     * 创建文件夹.
+     * 若文件夹已存在则会抛出异常.
+     * 若此文件夹的父级文件夹不存在也会抛出异常.
+     * 
+     * @param dir 文件夹
+     * @return File
+     */
+    public static File mkDir(File dir) {
+        return mkDir(dir.toPath()).toFile();
+    }
+    
+    /**
+     * 创建文件夹.
+     * 若文件夹已存在则会抛出异常.
+     * 若此文件夹的父级文件夹不存在也会抛出异常.
+     * 
+     * @param dir 文件夹
+     * @return Path
+     */
+    public static Path mkDir(Path dir) {
+        requireNotNull(dir);
+        try {
+            Files.createDirectory(dir);
+        } catch (IOException e) {
+            silentThrex(e);
+        }
+        return dir;
+    }
+    
+    /**
+     * 创建文件夹.
+     * 若其父文件夹不存在,则会创建其父文件夹,以此类推.
+     * 若此文件夹路径上的文件已存在且不是一个文件夹,则抛出异常.
+     * 
+     * @param dir 文件夹路径
+     * @return Path
+     */
+    public static Path mkDirs(String dir) {
+        return mkDir(Paths.get(requireNotBlank(dir)));
+    }
+    
+    /**
+     * 创建文件夹.
+     * 若其父文件夹不存在,则会创建其父文件夹,以此类推.
+     * 若此文件夹路径上的文件已存在且不是一个文件夹,则抛出异常.
+     * 
+     * @param dir 文件夹
+     * @return File
+     */
+    public static File mkDirs(File dir) {
+        return mkDir(dir.toPath()).toFile();
+    }
+    
+    /**
+     * 创建文件夹.
+     * 若其父文件夹不存在,则会创建其父文件夹,以此类推.
+     * 若此文件夹路径上的文件已存在且不是一个文件夹,则抛出异常.
+     * 
+     * @param dir 文件夹
+     * @return Path
+     */
+    public static Path mkDirs(Path dir) {
+        requireNotNull(dir);
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            silentThrex(e);
+        }
+        return dir;
+    }
+    
+    /**
+     * 创建子文件夹.
+     * 若child是绝对路径且child的父文件夹不是parent,则抛出异常.
+     * 若子文件夹已存在,或其父文件夹不存在,则抛出异常.
+     * 
+     * @param parent 父文件夹
+     * @param child 子文件夹
+     * @return Path
+     */
+    public static Path mkSubdir(String parent, String child) {
+        return mkSubdir(Paths.get(requireNotBlank(parent)), child);
+    }
+    
+    /**
+     * 创建子文件夹.
+     * 若child是绝对路径且child的父文件夹不是parent,则抛出异常.
+     * 若子文件夹已存在,或其父文件夹不存在,则抛出异常.
+     * 
+     * @param parent 父文件夹
+     * @param child 子文件夹
+     * @return File
+     */
+    public static File mkSubdir(File parent, String child) {
+        return mkSubdir(parent.toPath(), child).toFile();
+    }
+    
+    /**
+     * 创建子文件夹.
+     * 若child是绝对路径且child的父文件夹不是parent,则抛出异常.
+     * 若子文件夹已存在,或其父文件夹不存在,则抛出异常.
+     * 
+     * @param parent 父文件夹
+     * @param child 子文件夹
+     * @return Path
+     */
+    public static Path mkSubdir(Path parent, String child) {
+        Path path = Paths.get(requireNotBlank(child));
+        if (path.isAbsolute() && parent.equals(path.getParent())) {
+            threx(IllegalArgumentException::new, "%s不是%s的父文件夹!", parent, child);
+        }
+        return mkDir(parent.resolve(child));
+    }
+    
+    /**
+     * 创建子文件夹.
+     * 若child是绝对路径且child不包含parent的所有路径,则抛出异常.
+     * 若其父文件夹不存在,则会创建其父文件夹,以此类推.
+     * 若此子文件夹路径上的文件已存在且不是一个文件夹,则抛出异常.
+     * 
+     * @param parent 父文件夹
+     * @param child 子文件夹
+     * @return Path
+     */
+    public static Path mkSubdirs(String parent, String child) {
+        return mkSubdirs(Paths.get(requireNotBlank(parent)), child);
+    }
+    
+    /**
+     * 创建子文件夹.
+     * 若child是绝对路径且child不包含parent的所有路径,则抛出异常.
+     * 若其父文件夹不存在,则会创建其父文件夹,以此类推.
+     * 若此子文件夹路径上的文件已存在且不是一个文件夹,则抛出异常.
+     * 
+     * @param parent 父文件夹
+     * @param child 子文件夹
+     * @return File
+     */
+    public static File mkSubdirs(File parent, String child) {
+        return mkSubdirs(parent.toPath(), child).toFile();
+    }
+    
+    /**
+     * 创建子文件夹.
+     * 若child是绝对路径且child不包含parent的所有路径,则抛出异常.
+     * 若其父文件夹不存在,则会创建其父文件夹,以此类推.
+     * 若此子文件夹路径上的文件已存在且不是一个文件夹,则抛出异常.
+     * 
+     * @param parent 父文件夹
+     * @param child 子文件夹
+     * @return Path
+     */
+    public static Path mkSubdirs(Path parent, String child) {
+        Path path = Paths.get(requireNotBlank(child));
+        if (path.isAbsolute() && !path.startsWith(parent)) {
+            threx(IllegalArgumentException::new, "%s不是%s的子目录!", child, parent);
+        }
+        return mkDirs(parent.resolve(child));
+    }
     
     
     /**

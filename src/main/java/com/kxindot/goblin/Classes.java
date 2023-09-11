@@ -148,12 +148,21 @@ public final class Classes {
     }
     
     /**
+     * 判断是否基础数据类型
+     * @param cls {@code Class<?>}
+     * @return boolean
+     */
+    public static boolean isPrimitive(Class<?> cls) {
+        return cls != null && cls.isPrimitive();
+    }
+    
+    /**
      * 判断是否基础数据类型或包装类型
      * @param cls {@code Class<?>}
      * @return boolean
      */
     public static boolean isPrimitiveOrWrapper(Class<?> cls) {
-        return cls == null ? false : (cls.isPrimitive() || isPrimitiveWrapper(cls));
+        return cls != null && (cls.isPrimitive() || isPrimitiveWrapper(cls));
     }
     
     /**

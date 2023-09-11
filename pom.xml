@@ -9,7 +9,7 @@
 
     <name>goblin</name>
     <url>https://github.com/kxindot/goblin</url>
-    <description>哥布林工具包</description>
+    <description>各种便捷工具封装</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -184,7 +184,7 @@
     <developers>
         <developer>
             <name>ZhaoQingJiang</name>
-            <email>livingdarkmind@163.com</email>
+            <email>snagon@yeah.net</email>
             <url>https://github.com/kxindot</url>
         </developer>
     </developers>

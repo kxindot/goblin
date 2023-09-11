@@ -4,7 +4,7 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * <p>Base64加密/解密算法工具</p>
- * <p>该工具是对apache-commons-codec的封装</p>
+ * <p>该工具是对apache-commons-codec中Base64算法的二次封装</p>
  * @author ZhaoQingJiang
  * @date 2017-11-08
  */
