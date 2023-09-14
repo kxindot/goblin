@@ -1,4 +1,4 @@
-package com.kxindot.goblin.misc;
+package com.kxindot.goblin.system;
 
 import static com.kxindot.goblin.Objects.isEmpty;
 import static com.kxindot.goblin.Objects.isNotEmpty;
@@ -21,7 +21,7 @@ import com.kxindot.goblin.logger.LoggerFactory;
 /**
  * @author ZhaoQingJiang
  */
-public class Exit {
+public class SystemExit {
     
     private static volatile int Current_Exit_Status;
     private static volatile OSSignal Current_Exit_Signal;
@@ -136,7 +136,7 @@ public class Exit {
         /**
          * 回调优先级,数字越小优先级越高.
          * 只存在于绑定了多个同步回调时生效.
-         * @see Exit#bindSyncHook(ExitHook...)
+         * @see SystemExit#bindSyncHook(ExitHook...)
          * @return int 数字越小优先级越高
          */
         default int order() {

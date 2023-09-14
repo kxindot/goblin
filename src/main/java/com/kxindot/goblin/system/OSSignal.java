@@ -1,4 +1,4 @@
-package com.kxindot.goblin.misc;
+package com.kxindot.goblin.system;
 
 import static com.kxindot.goblin.Objects.defaultIfNull;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;

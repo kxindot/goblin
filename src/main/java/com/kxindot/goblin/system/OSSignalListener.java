@@ -1,4 +1,4 @@
-package com.kxindot.goblin.misc;
+package com.kxindot.goblin.system;
 
 /**
  * @author ZhaoQingJiang
