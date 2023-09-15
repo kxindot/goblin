@@ -3,13 +3,11 @@ package com.kxindot.goblin.compile;
 import static com.kxindot.goblin.Classes.Package_Separator;
 import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.toPathPattern;
-import static com.kxindot.goblin.IO.readBytes;
-import static com.kxindot.goblin.IO.readString;
-import static com.kxindot.goblin.IO.write;
 import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.Resources.isFile;
+import static com.kxindot.goblin.Resources.load;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
@@ -58,7 +56,7 @@ public class JavaDynamicFile implements JavaFileObject {
     
     protected JavaDynamicFile(String className, InputStream codes, Kind kind) {
         this(className, uri(toPathPattern(className), kind), kind);
-        write(stream = new ByteArrayOutputStream(), codes);
+        load(stream = new ByteArrayOutputStream()).read(codes).close();
     }
     
     protected JavaDynamicFile(URI uri, Kind kind) {
@@ -120,7 +118,7 @@ public class JavaDynamicFile implements JavaFileObject {
     }
     
     public byte[] getByteContent() {
-        return stream == null ? readBytes(uri) : stream.toByteArray();
+        return stream == null ? load(uri).readBytes() : stream.toByteArray();
     }
 
     @Override
@@ -147,7 +145,7 @@ public class JavaDynamicFile implements JavaFileObject {
 
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-        return stream == null ? readString(uri) : new String(stream.toByteArray());
+        return stream == null ? load(uri).readString() : new String(stream.toByteArray());
     }
     
     @Override

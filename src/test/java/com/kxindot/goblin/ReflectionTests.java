@@ -66,13 +66,11 @@ public class ReflectionTests extends JunitTests {
 
     @Override
     public void beforeEach() {
-        // TODO Auto-generated method stub
         
     }
 
     @Override
     public void afterEach() {
-        // TODO Auto-generated method stub
         
     }
     

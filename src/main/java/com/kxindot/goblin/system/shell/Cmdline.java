@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.file.Path;
-import java.util.Map;
 
 /**
  * 命令行
@@ -12,6 +11,10 @@ import java.util.Map;
  * @author ZhaoQingJiang
  */
 public interface Cmdline {
+	
+	public static Cmdline create() {
+		return new CmdlinImpl(null);
+	}
 	
 	/**
 	 * 设置待运行命令
@@ -70,27 +73,4 @@ public interface Cmdline {
 	 * @param callback
 	 */
 	void execAsync(CmdlineCallback callback);
-	
-	/**
-	 * 命令行异步运行回调接口
-	 * @author ZhaoQingJiang
-	 */
-	@FunctionalInterface
-	public interface CmdlineCallback {
-		
-		/**
-		 * 命令运行前回调
-		 * @param cmd 命令(包含参数)
-		 * @param envs 环境参数
-		 */
-		default void beforeProcess(String cmd, Map<String, String> envs) {}
-		
-		/**
-		 * 命令运行后回调
-		 * @param exit 命令退出码
-		 * @param output 命令输出
-		 */
-		void afterProcess(int exit, String output);
-		
-	}
 }

@@ -25,15 +25,15 @@ import com.kxindot.goblin.EnumValue;
  */
 public class OS {
 
-	public static final String NAME = System.getenv("os.name").toLowerCase(Locale.ENGLISH);
+	public static final String NAME = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
 
-	public static final String ARCH = System.getenv("os.arch").toLowerCase(Locale.ENGLISH);
+	public static final String ARCH = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
 
-	public static final String VERSION = System.getenv("os.version").toLowerCase(Locale.ENGLISH);
+	public static final String VERSION = System.getProperty("os.version").toLowerCase(Locale.ENGLISH);
 
-	public static final String PATH_SEPARATOR = System.getenv("path.separator").toLowerCase(Locale.ENGLISH);
+	public static final String PATH_SEPARATOR = System.getProperty("path.separator").toLowerCase(Locale.ENGLISH);
 
-	public static final String LINE_SEPARATOR = System.getenv("line.separator").toLowerCase(Locale.ENGLISH);
+	public static final String LINE_SEPARATOR = System.getProperty("line.separator").toLowerCase(Locale.ENGLISH);
 
 	public static final OSFamily FAMILY = getFamily();
 

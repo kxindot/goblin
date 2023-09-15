@@ -24,6 +24,10 @@ import static javax.tools.JavaFileObject.Kind.SOURCE;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -41,6 +45,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import com.kxindot.goblin.exception.RuntimeException;
+import com.kxindot.goblin.io.IO;
+import com.kxindot.goblin.io.IOInput;
+import com.kxindot.goblin.io.IOOutput;
+import com.kxindot.goblin.io.IOReader;
+import com.kxindot.goblin.io.IOWriter;
 
 /**
  * 
@@ -798,6 +807,76 @@ public class Resources {
             threx(IllegalArgumentException::new, "%s不是%s的子目录!", child, parent);
         }
         return mkDirs(parent.resolve(child));
+    }
+    
+    
+    
+    
+    /**************************************************IO**************************************************/
+    
+    
+    public static IOInput load(URI uri) {
+    	return load(IO.open(uri));
+    }
+
+    
+    public static IOInput load(URL url) {
+    	return load(IO.open(url));
+    }
+    
+    
+    public static IOInput load(InputStream in) {
+    	return IO.input(in);
+    }
+    
+    
+    public static IOReader load(Reader reader) {
+    	return IO.input(reader);
+    }
+    
+    
+    public static IOOutput load(OutputStream out) {
+    	return IO.output(out);
+    }
+    
+    
+    public static IOWriter load(Writer writer) {
+    	return IO.output(writer);
+    }
+    
+    
+    public static byte[] readByte(InputStream in) {
+    	return load(in).readBytes();
+    }
+    
+    
+    public static String readString(InputStream in) {
+    	return load(in).readString();
+    }
+    
+    
+    public static String readString(Reader reader) {
+    	return load(reader).read();
+    }
+    
+    
+    public static void writeAndClose(Writer writer, byte[] content) {
+    	load(writer).write(content).close();
+    }
+    
+    
+    public static void writeAndClose(Writer writer, CharSequence content) {
+    	load(writer).write(content).close();
+    }
+    
+    
+    public static void writeAndClose(OutputStream out, byte[] content) {
+    	load(out).write(content).close();
+    }
+    
+    
+    public static void writeAndClose(OutputStream out, CharSequence content) {
+    	load(out).write(content).close();
     }
     
     

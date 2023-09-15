@@ -1,10 +1,10 @@
 package com.kxindot.goblin.compile;
 
 import static com.kxindot.goblin.Classes.getAvailableClassLoader;
-import static com.kxindot.goblin.IO.readBytes;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Resources.readByte;
 import static com.kxindot.goblin.Throws.silentThrex;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
@@ -100,11 +100,11 @@ public class JavaDynamicClassLoader extends ClassLoader {
             if (file instanceof JavaDynamicFile) {
                 bytes = JavaDynamicFile.class.cast(file).getByteContent();
             } else {
-                try (InputStream in = file.openInputStream()) {
-                    bytes = readBytes(in);
-                } catch (IOException e) {
-                    silentThrex(e);
-                }
+            	try {
+					bytes = readByte(file.openInputStream());
+				} catch (IOException e) {
+					silentThrex(e);
+				}
             }
         }
         return bytes;

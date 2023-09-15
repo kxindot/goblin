@@ -11,7 +11,7 @@ public class CmdlineException extends RuntimeException {
 		super(message);
 	}
 	
-	CmdlineException(Throwable cause, String message) {
+	CmdlineException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }
