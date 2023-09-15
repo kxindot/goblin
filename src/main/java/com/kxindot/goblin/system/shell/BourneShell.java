@@ -1,6 +1,6 @@
 package com.kxindot.goblin.system.shell;
 
-import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
+import static com.kxindot.goblin.system.OSFamily.WINDOWS;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -15,7 +15,7 @@ import static com.kxindot.goblin.Resources.readString;
 import static com.kxindot.goblin.Throws.isWrapperException;
 import static com.kxindot.goblin.Throws.threx;
 import static com.kxindot.goblin.Throws.unwrapperException;
-import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
+import static com.kxindot.goblin.system.OSFamily.WINDOWS;
 import static java.util.Collections.synchronizedList;
 import static java.util.Collections.synchronizedMap;
 
