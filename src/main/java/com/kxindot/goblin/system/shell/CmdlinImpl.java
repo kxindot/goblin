@@ -1,15 +1,20 @@
 package com.kxindot.goblin.system.shell;
 
+import static com.kxindot.goblin.Objects.Comma;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newLinkedHashMap;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.stringJoinWith;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.Resources.load;
+import static com.kxindot.goblin.Resources.readString;
+import static com.kxindot.goblin.Throws.isWrapperException;
 import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.unwrapperException;
 import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
 import static java.util.Collections.synchronizedList;
 import static java.util.Collections.synchronizedMap;
@@ -25,13 +30,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.kxindot.goblin.logger.Logger;
+import com.kxindot.goblin.logger.LoggerFactory;
 import com.kxindot.goblin.system.OS;
 
 /**
  * @author ZhaoQingJiang
  */
 public class CmdlinImpl implements Cmdline {
-
+    
 	private final List<CmdArg> args;
 	private final Map<String, String> envs;
 	private final Shell shell;
@@ -112,21 +119,7 @@ public class CmdlinImpl implements Cmdline {
 		requireNotNull(writer);
 		Process process = exec();
 		load(writer).read(new InputStreamReader(process.getInputStream())).close();
-		int exit = 0;
-		try {
-			exit = process.exitValue();
-			System.out.println("not err");
-		} catch (IllegalThreadStateException e) {
-			System.out.println("err");
-			try {
-				process.waitFor();
-			} catch (InterruptedException e1) {
-				//ignore
-			}
-			exit = process.exitValue();
-		}
-		System.out.println("exit: " + exit);
-		return exit == 0;
+		return isSuccess(process);
 	}
 
 	@Override
@@ -134,26 +127,47 @@ public class CmdlinImpl implements Cmdline {
 		requireNotNull(out);
 		Process process = exec();
 		load(out).read(process.getInputStream()).close();
-		int exit = 0;
-		try {
-			exit = process.exitValue();
-			System.out.println("not err");
-		} catch (IllegalThreadStateException e) {
-			System.out.println("err");
-			try {
-				process.waitFor();
-			} catch (InterruptedException e1) {
-				//ignore
-			}
-			exit = process.exitValue();
-		}
-		System.out.println("exit: " + exit);
-		return exit == 0;
+		return isSuccess(process);
+	}
+	
+	private boolean isSuccess(Process process) {
+	    int exit = 0;
+        try {
+            exit = process.exitValue();
+        } catch (IllegalThreadStateException e) {
+            try {
+                process.waitFor();
+            } catch (InterruptedException e1) {
+                //ignore
+            }
+            exit = process.exitValue();
+        }
+        if (exit == 127) {
+            threx(CmdlineException::new, "命令不存在: %s", shell.getExecutable());
+        }
+        return exit == 0;
+	}
+	
+	@Override
+	public void execAsync() {
+	    execAsync(callback);
 	}
 
 	@Override
 	public void execAsync(CmdlineCallback callback) {
-
+        callback.beforeProcess(getCmdline(), envs);
+        Throwable ex = null;
+        String output = null;
+	    try {
+	        Process process = exec();
+            output = readString(process.getInputStream());
+        } catch (Throwable e) {
+            if (isWrapperException(e)) {
+                e = unwrapperException(e);
+            }
+            ex = e;
+        }
+	    callback.afterProcess(output, ex);
 	}
 
 	private Process exec() {
@@ -187,6 +201,10 @@ public class CmdlinImpl implements Cmdline {
 		return list.toArray(new String[0]);
 	}
 	
+	private String getCmdline() {
+	    return stringJoinWith(" ", getCmdArray());
+	}
+	
 	private String[] getCmdArray() {
 		List<String> cmdline = shell.getShellCommandLine(getArgs());
 		return cmdline.toArray(new String[0]);
@@ -211,5 +229,28 @@ public class CmdlinImpl implements Cmdline {
 		}
 		return list.toArray(new String[0]);
 	}
+	
+    private static Logger logger = LoggerFactory.getLogger(CmdlinImpl.class);
+
+    private static CmdlineCallback callback = new CmdlineCallback() {
+        
+        public void beforeProcess(String cmd, Map<String,String> envs) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("运行命令: {}", cmd);
+                List<String> list = newArrayList();
+                envs.forEach((k, v) -> list.add(k + "=" + v));
+                logger.debug("运行环境变量: {}", stringJoinWith(Comma, list));
+            }
+        };
+        
+        @Override
+        public void afterProcess(String output, Throwable ex) {
+            if (ex != null) {
+                logger.info("命令运行异常!", ex);
+            } else {
+                logger.info("命令运行结果: {}", output);
+            }
+        }
+    };
 
 }

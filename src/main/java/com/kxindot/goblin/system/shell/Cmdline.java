@@ -69,6 +69,11 @@ public interface Cmdline {
 	boolean execSync(OutputStream out);
 	
 	/**
+     * 异步运行命令
+     */
+    void execAsync();
+	
+	/**
 	 * 异步运行命令,callback在命令运行前后会调用特定方法.
 	 * @param callback
 	 */
