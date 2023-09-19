@@ -1,19 +1,51 @@
 package com.kxindot.goblin.system.shell;
 
+import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
+
 import java.io.File;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Path;
 
+import com.kxindot.goblin.system.OS;
+
 /**
- * 命令行
+ * 命令行工具
  * 
  * @author ZhaoQingJiang
  */
 public interface Cmdline {
 	
+	/**
+	 * 创建一个命令行实例.
+	 * @return Cmdline
+	 */
 	public static Cmdline create() {
 		return new CmdlinImpl(null);
+	}
+	
+	/**
+	 * 查询指定命令{@code cmd}的绝对路径.
+	 * <b>若命令不存在,返回null.</b>
+	 * <pre>
+	 * 类Unix系统运行which命令;
+	 * Windows类系统运行where命令;
+	 * </pre>
+	 * @param cmd 待查询命令
+	 * @return String 命令绝对路径 - 命令不存在则返回null
+	 */
+	public static String which(String cmd) {
+		String arg = cmd;
+		cmd = OS.isFamily(WINDOWS.value()) ? "where" : "which";
+		StringWriter writer = new StringWriter();
+		Cmdline.create().cmd(cmd).arg(arg).execSync(writer);
+		return writer.toString();
+	}
+	
+	public static String pwd() {
+		
+		return null;
 	}
 	
 	/**
@@ -44,8 +76,18 @@ public interface Cmdline {
 	 */
 	Cmdline args(String... args);
 	
+	/**
+	 * 设置命令工作目录
+	 * @param directory 目录
+	 * @return Cmdline
+	 */
 	Cmdline workingDirectory(Path directory);
 	
+	/**
+	 * 设置命令工作目录
+	 * @param directory 目录
+	 * @return Cmdline
+	 */
 	Cmdline workingDirectory(File directory);
 	
 	/**

@@ -112,21 +112,7 @@ public class CmdlinImpl implements Cmdline {
 		requireNotNull(writer);
 		Process process = exec();
 		load(writer).read(new InputStreamReader(process.getInputStream())).close();
-		int exit = 0;
-		try {
-			exit = process.exitValue();
-			System.out.println("not err");
-		} catch (IllegalThreadStateException e) {
-			System.out.println("err");
-			try {
-				process.waitFor();
-			} catch (InterruptedException e1) {
-				//ignore
-			}
-			exit = process.exitValue();
-		}
-		System.out.println("exit: " + exit);
-		return exit == 0;
+		return isSuccess(process);
 	}
 
 	@Override
@@ -134,26 +120,12 @@ public class CmdlinImpl implements Cmdline {
 		requireNotNull(out);
 		Process process = exec();
 		load(out).read(process.getInputStream()).close();
-		int exit = 0;
-		try {
-			exit = process.exitValue();
-			System.out.println("not err");
-		} catch (IllegalThreadStateException e) {
-			System.out.println("err");
-			try {
-				process.waitFor();
-			} catch (InterruptedException e1) {
-				//ignore
-			}
-			exit = process.exitValue();
-		}
-		System.out.println("exit: " + exit);
-		return exit == 0;
+		return isSuccess(process);
 	}
-
+	
 	@Override
 	public void execAsync(CmdlineCallback callback) {
-
+		
 	}
 
 	private Process exec() {
@@ -176,6 +148,25 @@ public class CmdlinImpl implements Cmdline {
 		}
 		return process;
 	}
+	
+	private boolean isSuccess(Process process) {
+		int exit = 0;
+		try {
+			exit = process.exitValue();
+		} catch (IllegalThreadStateException e) {
+			try {
+				process.waitFor();
+			} catch (InterruptedException e1) {
+				//ignore
+			}
+			exit = process.exitValue();
+		}
+		if (exit == 127) {
+			threx(CmdlineException::new, "命令不存在: %s", shell.getExecutable());
+		}
+		return exit == 0;
+	}
+
 	
 	private String[] getEnvs() {
 		List<String> list = newArrayList();

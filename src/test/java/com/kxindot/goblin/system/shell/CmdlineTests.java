@@ -9,8 +9,10 @@ public class CmdlineTests {
 
 	
 	public static void main(String[] args) {
-		boolean result = Cmdline.create().cmd("which pwd").execSync();
-		System.out.println("result: " + result);
+		System.out.printf("which node: %s\n", Cmdline.which("node"));
+		System.out.printf("which java: %s\n", Cmdline.which("java"));
+		System.out.printf("which mvn: %s\n", Cmdline.which("mvn"));
+		System.out.printf("which pwd: %s\n", Cmdline.which("pwd"));
 	}
 	
 	
