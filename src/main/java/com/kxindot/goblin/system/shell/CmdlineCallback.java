@@ -16,11 +16,12 @@ public interface CmdlineCallback {
 	 */
 	default void beforeProcess(String cmd, Map<String, String> envs) {}
 	
+	
 	/**
 	 * 命令运行后回调
-	 * @param exit 命令退出码
 	 * @param output 命令输出
+	 * @param ex 命令运行时异常
 	 */
-	void afterProcess(int exit, String output);
+	void afterProcess(String output, Throwable ex);
 	
 }

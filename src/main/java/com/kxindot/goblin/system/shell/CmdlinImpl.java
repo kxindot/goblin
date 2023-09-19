@@ -1,16 +1,21 @@
 package com.kxindot.goblin.system.shell;
 
+import static com.kxindot.goblin.Objects.Comma;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newLinkedHashMap;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.stringJoinWith;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.Resources.load;
+import static com.kxindot.goblin.Resources.readString;
+import static com.kxindot.goblin.Throws.isWrapperException;
 import static com.kxindot.goblin.Throws.threx;
-import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
+import static com.kxindot.goblin.Throws.unwrapperException;
+import static com.kxindot.goblin.system.OSFamily.WINDOWS;
 import static java.util.Collections.synchronizedList;
 import static java.util.Collections.synchronizedMap;
 
@@ -18,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -25,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.kxindot.goblin.logger.Logger;
+import com.kxindot.goblin.logger.LoggerFactory;
 import com.kxindot.goblin.system.OS;
 
 /**
@@ -95,11 +103,18 @@ public class CmdlinImpl implements Cmdline {
 		shell.setWorkingDirectory(directory.toFile());
 		return this;
 	}
-	
+
 	@Override
 	public Cmdline workingDirectory(File directory) {
 		shell.setWorkingDirectory(directory);
 		return this;
+	}
+
+	@Override
+	public String execOut() {
+		StringWriter writer = new StringWriter();
+		execSync(writer);
+		return writer.toString();
 	}
 
 	@Override
@@ -122,10 +137,27 @@ public class CmdlinImpl implements Cmdline {
 		load(out).read(process.getInputStream()).close();
 		return isSuccess(process);
 	}
-	
+
+	@Override
+	public void execAsync() {
+		execAsync(callback);
+	}
+
 	@Override
 	public void execAsync(CmdlineCallback callback) {
-		
+		callback.beforeProcess(getCmdline(), envs);
+		Throwable ex = null;
+		String output = null;
+		try {
+			Process process = exec();
+			output = readString(process.getInputStream());
+		} catch (Throwable e) {
+			if (isWrapperException(e)) {
+				e = unwrapperException(e);
+			}
+			ex = e;
+		}
+		callback.afterProcess(output, ex);
 	}
 
 	private Process exec() {
@@ -148,7 +180,7 @@ public class CmdlinImpl implements Cmdline {
 		}
 		return process;
 	}
-	
+
 	private boolean isSuccess(Process process) {
 		int exit = 0;
 		try {
@@ -157,7 +189,7 @@ public class CmdlinImpl implements Cmdline {
 			try {
 				process.waitFor();
 			} catch (InterruptedException e1) {
-				//ignore
+				// ignore
 			}
 			exit = process.exitValue();
 		}
@@ -167,7 +199,6 @@ public class CmdlinImpl implements Cmdline {
 		return exit == 0;
 	}
 
-	
 	private String[] getEnvs() {
 		List<String> list = newArrayList();
 		this.envs.forEach((k, v) -> {
@@ -177,16 +208,20 @@ public class CmdlinImpl implements Cmdline {
 		});
 		return list.toArray(new String[0]);
 	}
-	
+
+	private String getCmdline() {
+		return stringJoinWith(" ", getCmdArray());
+	}
+
 	private String[] getCmdArray() {
 		List<String> cmdline = shell.getShellCommandLine(getArgs());
 		return cmdline.toArray(new String[0]);
 	}
-	
+
 	public String[] getArgs() {
 		return getArgs(false);
 	}
-	
+
 	public String[] getArgs(boolean mask) {
 		List<String> list = newArrayList();
 		for (CmdArg arg : args) {
@@ -202,5 +237,28 @@ public class CmdlinImpl implements Cmdline {
 		}
 		return list.toArray(new String[0]);
 	}
+
+	private static Logger logger = LoggerFactory.getLogger(CmdlinImpl.class);
+
+	private static CmdlineCallback callback = new CmdlineCallback() {
+
+		public void beforeProcess(String cmd, Map<String, String> envs) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("运行命令: {}", cmd);
+				List<String> list = newArrayList();
+				envs.forEach((k, v) -> list.add(k + "=" + v));
+				logger.debug("运行环境变量: {}", stringJoinWith(Comma, list));
+			}
+		};
+
+		@Override
+		public void afterProcess(String output, Throwable ex) {
+			if (ex != null) {
+				logger.info("命令运行异常!", ex);
+			} else {
+				logger.info("命令运行结果: {}", output);
+			}
+		}
+	};
 
 }

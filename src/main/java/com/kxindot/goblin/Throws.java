@@ -305,7 +305,7 @@ public final class Throws {
      * 包装类异常,用于包装其他异常.
      * @author ZhaoQingJiang
      */
-    static class WrapperException extends RuntimeException {
+    public static class WrapperException extends RuntimeException {
 
         private static final long serialVersionUID = -7695946876494794480L;
 

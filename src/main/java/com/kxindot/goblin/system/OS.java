@@ -1,24 +1,21 @@
 package com.kxindot.goblin.system;
 
-import static com.kxindot.goblin.Objects.newUnmodifiableSet;
-import static com.kxindot.goblin.system.OS.OSFamily.DOS;
-import static com.kxindot.goblin.system.OS.OSFamily.MAC;
-import static com.kxindot.goblin.system.OS.OSFamily.NETWARE;
-import static com.kxindot.goblin.system.OS.OSFamily.NT;
-import static com.kxindot.goblin.system.OS.OSFamily.OPENVMS;
-import static com.kxindot.goblin.system.OS.OSFamily.OS2;
-import static com.kxindot.goblin.system.OS.OSFamily.OS400;
-import static com.kxindot.goblin.system.OS.OSFamily.TANDEM;
-import static com.kxindot.goblin.system.OS.OSFamily.UNIX;
-import static com.kxindot.goblin.system.OS.OSFamily.WIN9X;
-import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
-import static com.kxindot.goblin.system.OS.OSFamily.ZOS;
+import static com.kxindot.goblin.system.OSFamily.DOS;
+import static com.kxindot.goblin.system.OSFamily.MAC;
+import static com.kxindot.goblin.system.OSFamily.NETWARE;
+import static com.kxindot.goblin.system.OSFamily.NT;
+import static com.kxindot.goblin.system.OSFamily.OPENVMS;
+import static com.kxindot.goblin.system.OSFamily.OS2;
+import static com.kxindot.goblin.system.OSFamily.OS400;
+import static com.kxindot.goblin.system.OSFamily.TANDEM;
+import static com.kxindot.goblin.system.OSFamily.UNIX;
+import static com.kxindot.goblin.system.OSFamily.WIN9X;
+import static com.kxindot.goblin.system.OSFamily.WINDOWS;
+import static com.kxindot.goblin.system.OSFamily.ZOS;
 
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.kxindot.goblin.EnumValue;
 
 /**
  * @author ZhaoQingJiang
@@ -38,7 +35,19 @@ public class OS {
 	public static final OSFamily FAMILY = getFamily();
 
 	private static final Set<String> FAMILIES = OSFamily.families().stream().map(e -> e.value()).collect(Collectors.toSet());
-
+	
+	private static Boolean WinFamily; 
+	
+	public static boolean isUnix() {
+		return !isWindows();
+	}
+	
+	public static boolean isWindows() {
+		if (WinFamily == null) {
+			WinFamily = isFamily(WINDOWS.value());
+		}
+		return WinFamily;
+	}
 	
 	public static boolean isValidFamily(String family) {
 		return FAMILIES.contains(family);
@@ -128,32 +137,6 @@ public class OS {
 			}
 		}
 		return null;
-	}
-
-	public enum OSFamily implements EnumValue<String> {
-
-		WINDOWS("windows"), WIN9X("win9x"), NT("winnt"),
-
-		OS2("os/2"), NETWARE("netware"), DOS("dos"),
-
-		MAC("mac"), TANDEM("tandem"), UNIX("unix"),
-
-		OPENVMS("openvms"), ZOS("z/os"), OS400("os/400");
-
-		private String val;
-
-		private OSFamily(String val) {
-			this.val = val;
-		}
-
-		@Override
-		public String value() {
-			return val;
-		}
-
-		public static Set<OSFamily> families() {
-			return newUnmodifiableSet(OSFamily.class.getEnumConstants());
-		}
 	}
 
 }

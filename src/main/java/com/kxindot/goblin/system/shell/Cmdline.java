@@ -1,14 +1,11 @@
 package com.kxindot.goblin.system.shell;
 
-import static com.kxindot.goblin.system.OS.OSFamily.WINDOWS;
+import static com.kxindot.goblin.system.OS.isWindows;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Path;
-
-import com.kxindot.goblin.system.OS;
 
 /**
  * 命令行工具
@@ -29,23 +26,29 @@ public interface Cmdline {
 	 * 查询指定命令{@code cmd}的绝对路径.
 	 * <b>若命令不存在,返回null.</b>
 	 * <pre>
-	 * 类Unix系统运行which命令;
-	 * Windows类系统运行where命令;
+	 * Unix		:	which cmd
+	 * Windows	:	where cmd
 	 * </pre>
 	 * @param cmd 待查询命令
 	 * @return String 命令绝对路径 - 命令不存在则返回null
 	 */
 	public static String which(String cmd) {
 		String arg = cmd;
-		cmd = OS.isFamily(WINDOWS.value()) ? "where" : "which";
-		StringWriter writer = new StringWriter();
-		Cmdline.create().cmd(cmd).arg(arg).execSync(writer);
-		return writer.toString();
+		cmd = isWindows() ? "where" : "which";
+		return Cmdline.create().cmd(cmd).arg(arg).execOut();
 	}
 	
+	/**
+	 * 返回当前工作路径.
+	 * <pre>
+	 * Unix		:	pwd
+	 * Windows	:	cd
+	 * </pre>
+	 * @return 当前工作路径
+	 */
 	public static String pwd() {
-		
-		return null;
+		String cmd = isWindows() ? "cd" : "pwd";
+		return Cmdline.create().cmd(cmd).execOut();
 	}
 	
 	/**
@@ -91,6 +94,12 @@ public interface Cmdline {
 	Cmdline workingDirectory(File directory);
 	
 	/**
+	 * 运行命令并返回输出.
+	 * @return 命令输出
+	 */
+	String execOut();
+	
+	/**
 	 * 同步运行命令,会阻塞当前线程直到命令线程运行完成,返回命令是否运行成功.
 	 * @return 命令是否运行成功
 	 */
@@ -109,6 +118,11 @@ public interface Cmdline {
 	 * @return 命令是否运行成功
 	 */
 	boolean execSync(OutputStream out);
+	
+	/**
+     * 异步运行命令
+     */
+    void execAsync();
 	
 	/**
 	 * 异步运行命令,callback在命令运行前后会调用特定方法.
