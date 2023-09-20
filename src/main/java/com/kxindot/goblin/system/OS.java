@@ -1,5 +1,6 @@
 package com.kxindot.goblin.system;
 
+import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.system.OSFamily.DOS;
 import static com.kxindot.goblin.system.OSFamily.MAC;
 import static com.kxindot.goblin.system.OSFamily.NETWARE;
@@ -32,21 +33,25 @@ public class OS {
 
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator").toLowerCase(Locale.ENGLISH);
 
+	private static final String USER_HOME = System.getProperty("user.home");
+	
 	public static final OSFamily FAMILY = getFamily();
 
 	private static final Set<String> FAMILIES = OSFamily.families().stream().map(e -> e.value()).collect(Collectors.toSet());
 	
-	private static Boolean WinFamily; 
+	private static String JavaHome = System.getProperty("java.home");
+	
+	private static Boolean WindowsFamily;
 	
 	public static boolean isUnix() {
 		return !isWindows();
 	}
 	
 	public static boolean isWindows() {
-		if (WinFamily == null) {
-			WinFamily = isFamily(WINDOWS.value());
+		if (WindowsFamily == null) {
+			WindowsFamily = isFamily(WINDOWS.value());
 		}
-		return WinFamily;
+		return WindowsFamily;
 	}
 	
 	public static boolean isValidFamily(String family) {
@@ -127,6 +132,21 @@ public class OS {
 			retValue = isFamily && isName && isArch && isVersion;
 		}
 		return retValue;
+	}
+	
+	
+	public static String getUserHome() {
+		return USER_HOME;
+	}
+	
+	
+	public static String getJavaHome() {
+		return getJavaHome(null);
+	}
+
+	
+	public static String getJavaHome(String javaHome) {
+		return javaHome != null && !javaHome.equals(JavaHome) && isDirectory(javaHome) ? javaHome : JavaHome;
 	}
 	
 	private static OSFamily getFamily() {

@@ -1,5 +1,7 @@
 package com.kxindot.goblin.system.shell;
 
+import static com.kxindot.goblin.Objects.LF;
+import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.system.OS.isWindows;
 
 import java.io.File;
@@ -20,6 +22,17 @@ public interface Cmdline {
 	 */
 	public static Cmdline create() {
 		return new CmdlinImpl(null);
+	}
+	
+	/**
+	 * 查询命令是否存在.
+	 * @param cmd 命令
+	 * @return boolean
+	 */
+	public static boolean exists(String cmd) {
+		String arg = cmd;
+		cmd = isWindows() ? "where" : "which";
+		return Cmdline.create().cmd(cmd).arg(arg).execSync();
 	}
 	
 	/**
@@ -48,7 +61,9 @@ public interface Cmdline {
 	 */
 	public static String pwd() {
 		String cmd = isWindows() ? "cd" : "pwd";
-		return Cmdline.create().cmd(cmd).execOut();
+		String out = Cmdline.create().cmd(cmd).execOut();
+		return isBlank(out) ? out : out.endsWith(LF) 
+				? out.substring(0, out.length() - 1) : out;
 	}
 	
 	/**

@@ -336,9 +336,11 @@ class LoggerImpl implements Logger {
             ex = (Throwable) args[args.length - 1];
             arguments = new Object[args.length - 1];
             System.arraycopy(args, 0, arguments, 0, args.length - 1);
-        }
-        int count = countMatch(format, Braces);
+        } else {
+			arguments = args;
+		}
         if (arguments != null) {
+        	int count = countMatch(format, Braces);
             if (count > arguments.length ) {
                 count = arguments.length;
             }
