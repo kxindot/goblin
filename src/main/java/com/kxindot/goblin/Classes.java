@@ -8,7 +8,7 @@ import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.substringBeforeLast;
-import static com.kxindot.goblin.Resources.isJarFile;
+import static com.kxindot.goblin.resource.Resources.isJarFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -241,6 +241,43 @@ public final class Classes {
         }
         return false;
     }
+    
+    
+    /**
+     * 判断目标对象是否是来源类型或其子类型.
+     * 
+     * @param source 来源类型
+     * @param target 目标对象
+     * @return boolean 
+     */
+    public static boolean isAssignableFrom(Class<?> source, Object target) {
+    	return isAssignableFrom(source, target.getClass());
+    }
+    
+    
+    /**
+     * 判断目标类型是否是来源类型或其子类型.
+     * 
+     * @param source 来源类型
+     * @param target 目标类型
+     * @return boolean 
+     */
+    public static boolean isAssignableFrom(Class<?> source, Class<?> target) {
+    	return source.isAssignableFrom(target);
+    }
+    
+    
+    /**
+     * 判断目标对象是否来源类型的实例.
+     * 
+     * @param source 来源类型
+     * @param target 目标对象
+     * @return boolean
+     */
+    public static boolean isInstance(Class<?> source, Object target) {
+    	return source.isInstance(target);
+    }
+    
     
     /**
      * 判断类是否存在(是否存在于类加载器中)

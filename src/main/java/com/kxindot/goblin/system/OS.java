@@ -1,6 +1,6 @@
 package com.kxindot.goblin.system;
 
-import static com.kxindot.goblin.Resources.isDirectory;
+import static com.kxindot.goblin.resource.Resources.isDirectory;
 import static com.kxindot.goblin.system.OSFamily.DOS;
 import static com.kxindot.goblin.system.OSFamily.MAC;
 import static com.kxindot.goblin.system.OSFamily.NETWARE;

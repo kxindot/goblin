@@ -1,4 +1,4 @@
-package com.kxindot.goblin;
+package com.kxindot.goblin.resource;
 
 import static com.kxindot.goblin.Classes.Package_Separator;
 import static com.kxindot.goblin.Classes.Path_Separator;
@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import com.kxindot.goblin.Classes;
 import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;

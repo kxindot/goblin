@@ -5,9 +5,9 @@ import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.toPathPattern;
 import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.Objects.requireNotBlank;
-import static com.kxindot.goblin.Resources.isDirectory;
-import static com.kxindot.goblin.Resources.isFile;
-import static com.kxindot.goblin.Resources.load;
+import static com.kxindot.goblin.resource.Resources.isDirectory;
+import static com.kxindot.goblin.resource.Resources.isFile;
+import static com.kxindot.goblin.resource.Resources.load;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 

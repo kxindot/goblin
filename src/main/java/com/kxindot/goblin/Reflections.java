@@ -1,5 +1,6 @@
 package com.kxindot.goblin;
 
+import static com.kxindot.goblin.Classes.isAssignableFrom;
 import static com.kxindot.goblin.Objects.asList;
 import static com.kxindot.goblin.Objects.convert;
 import static com.kxindot.goblin.Objects.copyOf;
@@ -8,6 +9,7 @@ import static com.kxindot.goblin.Objects.isEmpty;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newArrayList;
+import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireTrue;
 import static com.kxindot.goblin.Objects.unmodifiableEmptyList;
 import static com.kxindot.goblin.Throws.threx;
@@ -55,8 +57,6 @@ public final class Reflections {
      * 默认方法过滤器,不过滤任何方法.
      */
     public static final Filter<Method> ACCEPT_ALL_METHOD = (m, t) -> {return true;};
-    
-    
     
     
     
@@ -599,24 +599,60 @@ public final class Reflections {
     }
 
     
-    public static Method findGetter(Class<?> cls, String name) {
-        PropertyDescriptor pd = findPropertyDescriptor(cls, name);
-        return pd == null ? null : pd.getReadMethod();
+    /**
+     * 查找类属性对应的Getter方法.
+     * 
+     * @param cls Class
+     * @param field 属性名
+     * @return Method 属性对应的Getter方法,若无则返回null.
+     * @throws ReflectionException 若属性在类中不存在,则抛出此异常.
+     */
+    public static Method findGetter(Class<?> cls, String field) throws ReflectionException {
+        PropertyDescriptor pd = findPropertyDescriptor(cls, field);
+        if (isNull(pd)) {
+			threx(ReflectionException::new, "类%s中不存在此属性: %s", cls.getName(), field);
+		}
+        return pd.getReadMethod();
+    }
+
+    /**
+     * 查找类属性对应的Setter方法.
+     * 
+     * @param cls Class
+     * @param field 属性名
+     * @return Method 属性对应的Setter方法,若无则返回null.
+     * @throws ReflectionException 若属性在类中不存在,则抛出此异常.
+     */
+    public static Method findSetter(Class<?> cls, String field) {
+        PropertyDescriptor pd = findPropertyDescriptor(cls, field);
+        if (isNull(pd)) {
+        	threx(ReflectionException::new, "类%s中不存在此属性: %s", cls.getName(), field);
+        }
+        return pd.getWriteMethod();
     }
 
     
-    public static Method findSetter(Class<?> cls, String name) {
-        PropertyDescriptor pd = findPropertyDescriptor(cls, name);
-        return pd == null ? null : pd.getWriteMethod();
-    }
-
-    
-    public static PropertyDescriptor findPropertyDescriptor(Class<?> cls, String name) {
+    /**
+     * 查找类属性描述符({@link PropertyDescriptor}).
+     * 
+     * @param cls Class
+     * @param field 属性名
+     * @return PropertyDescriptor 若属性在类中不存在,则返回null.
+     */
+    public static PropertyDescriptor findPropertyDescriptor(Class<?> cls, String field) {
+    	requireNotBlank(field, "属性名称name不能为空!");
         return listPropertyDescriptors(cls).stream()
-                .filter(e -> name.equals(e.getName())).findFirst().orElse(null);
+                .filter(e -> field.equals(e.getName())).findFirst().orElse(null);
     }
 
     
+    /**
+     * 列出类中所有的属性描述符({@link PropertyDescriptor}).
+     * 
+     * @param cls Class
+     * @return {@code List<PropertyDescriptor>}
+     * @throws ReflectionException 若获取类属性信息失败时,抛出此异常.
+     */
     public static List<PropertyDescriptor> listPropertyDescriptors(Class<?> cls) {
         BeanInfo info;
         try {
@@ -686,47 +722,170 @@ public final class Reflections {
     }
 
     
+    /**
+     * 获取对象属性的值.
+     * 
+     * @param obj 对象
+     * @param field 属性
+     * @return Object 属性值
+     * @throws ReflectionException 获取属性值异常时,抛出此异常.
+     */
     public static Object getValue(Object obj, Field field) {
-        return null;
+        return getValue(obj, field, null);
     }
 
     
-    public static Object getValue(Object obj, Field field, Object deVal) {
-        return null;
+    /**
+     * 获取对象属性的值,若值等于null,则返回默认值.
+     * 
+     * @param obj 对象
+     * @param field 属性
+     * @param defaultValue 默认值
+     * @return Object 属性值
+     * @throws ReflectionException 获取属性值异常时,抛出此异常.
+     */
+    public static Object getValue(Object obj, Field field, Object defaultValue) {
+    	Object value = null;
+    	try {
+    		makeAccessiable(field);
+			value = field.get(obj);
+		} catch (IllegalArgumentException 
+				| IllegalAccessException e) {
+			threx(ReflectionException::new, "获取属性值异常!");
+		}
+        return isNull(value) ? defaultValue : value;
     }
 
     
-    public static <T> T getValue(Object obj, Field field, Class<T> type) {
-        return null;
+    /**
+     * 获取对象属性的值.
+     * 
+     * @param <T>
+     * @param obj 对象
+     * @param field 属性
+     * @param type 指定属性值类型
+     * @return T 属性值
+     * @throws ReflectionException 获取属性值异常或属性值类型转换异常时,抛出此异常.
+     */
+    public static <T> T getValueOfType(Object obj, Field field, Class<T> type) {
+        return getValueOfType(obj, field, type, null);
     }
 
     
-    public static <T> T getValue(Object obj, Field field, Class<T> type, T deVal) {
-        return null;
+    /**
+     * 获取对象属性的值,若值等于null,则返回默认值.
+     * 
+     * @param <T>
+     * @param obj 对象
+     * @param field 属性
+     * @param type 指定属性值类型
+     * @param defaultValue 默认值
+     * @return T 属性值
+     * @throws ReflectionException 获取属性值异常或属性值类型转换异常时,抛出此异常.
+     */
+    public static <T> T getValueOfType(Object obj, Field field, Class<T> type, T defaultValue) {
+    	Object value = getValue(obj, field);
+    	if (isNull(value)) {
+			return defaultValue;
+		} else if (!isAssignableFrom(type, field.getType())) {
+			try {
+				value = convert(value, type);
+			} catch (TypeConvertException e) {
+				threx(ReflectionException::new, e, "类型转换异常!");
+			}
+		}
+        return type.cast(value);
     }
     
     
-    public static void setValue(Object obj, Field field, Object val) {
-        
+    /**
+     * 设置对象属性值.
+     * 
+     * @param obj 对象
+     * @param field 属性
+     * @param value 属性值
+     * @throws ReflectionException 设置属性值异常时,抛出此异常.
+     */
+    public static void setValue(Object obj, Field field, Object value) {
+    	try {
+    		makeAccessiable(field);
+			field.set(obj, value);
+		} catch (IllegalArgumentException 
+				| IllegalAccessException e) {
+			threx(ReflectionException::new, e, "设置属性值异常!");
+		}
     }
 
     
+    /**
+     * 调用对象方法.
+     * 
+     * @param obj 对象
+     * @param method 方法
+     * @param args 方法入参数组
+     * @return Object 方法返回值
+     * @throws ReflectionException 调用方法时,抛出此异常.
+     */
     public static Object invoke(Object obj, Method method, Object... args) {
-        return null;
+    	Object value = null;
+    	try {
+    		makeAccessiable(method);
+			value = method.invoke(obj, args);
+		} catch (IllegalAccessException 
+				| IllegalArgumentException 
+				| InvocationTargetException e) {
+			threx(ReflectionException::new, e, "调用方法%s#%s异常!", obj.getClass().getSimpleName(), method.getName());
+		}
+        return value;
     }
     
     
-    public static Object invokeGetter(Object obj, String name) {
-        
-        return null;
+    /**
+     * 调用对象属性Getter方法.
+     * 
+     * @param obj 对象
+     * @param field 属性名
+     * @return Object 属性值
+     * @throws ReflectionException 属性不存在或属性Getter方法不存在或调用方法异常时,抛出此异常.
+     */
+    public static Object invokeGetter(Object obj, String field) {
+        Method getter = findGetter(obj.getClass(), field);
+        if (isNull(getter)) {
+        	threx(ReflectionException::new, "类%s的属性%s不存在getter方法!", obj.getClass(), field);
+        }
+        return invoke(obj, getter);
     }
     
-    public static Object invokeSetter(Object obj, String name, Object val) {
-        
-        return null;
+    
+    /**
+     * 调用对象属性Setter方法.
+     * 
+     * @param obj 对象
+     * @param name 属性名
+     * @param value 属性值
+     * @throws ReflectionException 属性不存在或属性Setter方法不存在或调用方法异常时,抛出此异常.
+     */
+    public static void invokeSetter(Object obj, String name, Object value) {
+        Method setter = findSetter(obj.getClass(), name);
+        if (isNull(setter)) {
+        	threx(ReflectionException::new, "类%s的属性%s不存在setter方法!", obj.getClass(), name);
+		}
+        invoke(obj, setter, value);
     }
 
-    public static Object smartInvoke(Object obj, Method method, Object... args) {
+    /**
+     * 智能调用对象方法.
+     * 在下标相同的情况下,当入参类型跟方法入参类型不同时,尝试自动转换类型.
+     * 然后根据转换后的入参类型数组调用方法.
+     * 
+     * @param obj 对象
+     * @param method 方法
+     * @param args 方法入参数组
+     * @return Object 方法返回值
+     * @throws TypeConvertException
+     * @throws ReflectionException
+     */
+    public static Object invokeSmartly(Object obj, Method method, Object... args) {
         if (args == null)
             args = EMP_OBJ_ARR;
         int len = args.length;
@@ -830,7 +989,7 @@ public final class Reflections {
      * 
      * @author ZhaoQingJiang
      */
-    static class ReflectionException extends RuntimeException {
+    public static class ReflectionException extends RuntimeException {
 
         private static final long serialVersionUID = 212321960269231201L;
 
