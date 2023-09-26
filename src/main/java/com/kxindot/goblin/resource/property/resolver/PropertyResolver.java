@@ -7,17 +7,17 @@ import java.util.Properties;
  */
 public interface PropertyResolver<T> {
 	
+    
+    String getName();
+    
+    
+    Class<?> getType();
+    
 	
 	T resolve(Properties properties);
 	
 	
 	T resolve(String property);
-	
-	
-	String getName();
-	
-	
-	Class<T> getType();
 	
 	
 	void setName(String name);

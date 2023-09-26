@@ -25,7 +25,7 @@ public class ArrayPropertyResolver<T> extends AbstractPropertyResolver<T[]> {
 		resolver = new ListPropertyResolver<>(name, primitivePropertyResolver);
 	}
 
-	public Class<T> getElementType() {
+	public Class<?> getElementType() {
 		return resolver.getElementType();
 	}
 

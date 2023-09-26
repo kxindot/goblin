@@ -1,6 +1,7 @@
 package com.kxindot.goblin.resource.property.resolver;
 
 import static com.kxindot.goblin.Classes.isInstance;
+import static com.kxindot.goblin.Objects.Comma;
 import static com.kxindot.goblin.Objects.isNotNull;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
@@ -19,28 +20,26 @@ import com.kxindot.goblin.Regex;
  */
 public abstract class CollectionPropertyResolver<E, C extends Collection<E>> extends AbstractPropertyResolver<C> {
 
-	private static final String PA = "^\\[(0|[1-9]{1}\\d*)\\]$";
+	private static final String PA = "^\\[(0|[1-9]+?\\d*)\\]$";
 	protected String seperator;
 	protected PropertyResolver<E> resolver;
 
-	public CollectionPropertyResolver(PropertyResolver<E> resolver) {
-		this(null, resolver);
+	public CollectionPropertyResolver(Class<?> type, PropertyResolver<E> resolver) {
+	    this(null, type, resolver);
 	}
 
-	public CollectionPropertyResolver(String name, PropertyResolver<E> resolver) {
-		this(name, ",", resolver);
+	public CollectionPropertyResolver(String name, Class<?> type, PropertyResolver<E> resolver) {
+	    this(name, Comma, type, resolver);
 	}
 
-	@SuppressWarnings("unchecked")
-	public CollectionPropertyResolver(String name, String seperator, PropertyResolver<E> resolver) {
+	public CollectionPropertyResolver(String name, String seperator, Class<?> type, PropertyResolver<E> resolver) {
 		super(name);
-		C c = instance();
 		this.seperator = requireNotBlank(seperator, "分隔符不能为空!");
 		this.resolver = requireNotNull(resolver, "集合元素属性解析器不能为空!");
-		setType((Class<C>) c.getClass());
+		setType(type);
 	}
 
-	public Class<E> getElementType() {
+	public Class<?> getElementType() {
 		return resolver.getType();
 	}
 	
@@ -65,7 +64,7 @@ public abstract class CollectionPropertyResolver<E, C extends Collection<E>> ext
 				continue;
 			}
 			String key = String.class.cast(value);
-			if (!key.startsWith(name)) {
+			if (key.equals(name) || !key.startsWith(name)) {
 				continue;
 			}
 			String index = substringAfter(key, name);

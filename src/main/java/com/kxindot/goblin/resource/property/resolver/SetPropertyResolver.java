@@ -14,7 +14,7 @@ public class SetPropertyResolver<E> extends CollectionPropertyResolver<E, Set<E>
 	}
 	
 	public SetPropertyResolver(String name, PropertyResolver<E> resolver) {
-		super(name, resolver);
+		super(name, Set.class, resolver);
 	}
 
 	@Override

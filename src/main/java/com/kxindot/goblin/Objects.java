@@ -779,7 +779,7 @@ public final class Objects {
         String t = cs.toString();
         int p = t.indexOf(separator.toString());
         if (p != Index_Not_Found) {
-            t = t.substring(p + 1);
+            t = t.substring(p + separator.length());
         }
         return t;
     }

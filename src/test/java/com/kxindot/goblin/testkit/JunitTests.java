@@ -30,9 +30,13 @@ public abstract class JunitTests extends LogTests {
     }
     
     @BeforeEach
-    public abstract void beforeEach();
+    public void beforeEach() {
+        
+    }
     
     @AfterEach
-    public abstract void afterEach();
+    public void afterEach() {
+        
+    }
     
 }

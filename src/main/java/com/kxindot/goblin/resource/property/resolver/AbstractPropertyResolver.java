@@ -47,8 +47,9 @@ public abstract class AbstractPropertyResolver<T> implements PropertyResolver<T>
 		this.name = name;
 	}
 
-	void setType(Class<T> type) {
-		this.type = type;
+	@SuppressWarnings("unchecked")
+    void setType(Class<?> type) {
+		this.type = (Class<T>) type;
 	}
 
 	@Override
