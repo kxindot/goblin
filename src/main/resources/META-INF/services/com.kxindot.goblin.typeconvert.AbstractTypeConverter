@@ -6,6 +6,7 @@ com.kxindot.goblin.typeconvert.impl.CharSequenceToIntegerConverter
 com.kxindot.goblin.typeconvert.impl.CharSequenceToLongConverter
 com.kxindot.goblin.typeconvert.impl.CharSequenceToShortConverter
 com.kxindot.goblin.typeconvert.impl.CharSequenceToStringConverter
+com.kxindot.goblin.typeconvert.impl.CharSequenceToBooleanConverter
 
 com.kxindot.goblin.typeconvert.impl.DateToLocalDateConverter
 com.kxindot.goblin.typeconvert.impl.DateToLocalDateTimeConverter
