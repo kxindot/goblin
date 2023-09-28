@@ -1,7 +1,5 @@
 package com.kxindot.goblin.resource.property.resolver;
 
-import java.util.Properties;
-
 /**
  * @author ZhaoQingJiang
  */
@@ -13,11 +11,6 @@ public class StringPropertyResolver extends AbstractPropertyResolver<String> {
 
 	public StringPropertyResolver(String name) {
 		super(name, String.class);
-	}
-
-	@Override
-	protected String resovle(String name, Properties properties) {
-		return resolve(properties.getProperty(name));
 	}
 
 	@Override

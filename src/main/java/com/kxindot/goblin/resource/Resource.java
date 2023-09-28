@@ -1,4 +1,4 @@
-package com.kxindot.goblin.resource.property;
+package com.kxindot.goblin.resource;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -13,12 +13,8 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RUNTIME)
 @Target(TYPE)
-public @interface PropertySource {
+public @interface Resource {
 
-	
 	String[] value();
-	
-	
-	boolean ignoreNotFound() default true;
 	
 }

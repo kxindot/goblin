@@ -18,6 +18,7 @@ public abstract class AbstractPropertyResolver<T> implements PropertyResolver<T>
 
 	protected String name;
 	protected Class<T> type;
+	protected boolean ignoreNotFound;
 
 	public AbstractPropertyResolver() {
 		this(null, null);
@@ -28,8 +29,13 @@ public abstract class AbstractPropertyResolver<T> implements PropertyResolver<T>
 	}
 
 	public AbstractPropertyResolver(String name, Class<T> type) {
+		this(name, type, true);
+	}
+	
+	public AbstractPropertyResolver(String name, Class<T> type, boolean ignoreNotFound) {
 		this.name = name;
 		this.type = type;
+		this.ignoreNotFound = ignoreNotFound;
 	}
 
 	@Override
@@ -41,6 +47,10 @@ public abstract class AbstractPropertyResolver<T> implements PropertyResolver<T>
 	public Class<T> getType() {
 		return type;
 	}
+	
+	boolean ignoreNotFound() {
+		return ignoreNotFound;
+	}
 
 	@Override
 	public void setName(String name) {
@@ -51,16 +61,16 @@ public abstract class AbstractPropertyResolver<T> implements PropertyResolver<T>
     void setType(Class<?> type) {
 		this.type = (Class<T>) type;
 	}
+	
+	void setIgnoreNotFound(boolean ignoreNotFound) {
+		this.ignoreNotFound = ignoreNotFound;
+	}
 
 	@Override
 	public T resolve(Properties properties) {
+		requireNotBlank(name, "配置名称不能为空!");
 		requireNotNull(properties, "properties == null");
-		requireNotBlank(name, "name can'b be null or blank");
-		return resovle(name, properties);
-	}
-
-	protected T resovle(String name, Properties properties) {
-		return resolve(properties.getProperty(name));
+		return resolve(name, properties);
 	}
 
 	@Override
@@ -79,6 +89,17 @@ public abstract class AbstractPropertyResolver<T> implements PropertyResolver<T>
 			threx(PropertyResolveException::new, e, "解析字符串%s到%s类型失败!", property, type.getName());
 		}
 		return t;
+	}
+	
+	protected T resolve(String name, Properties properties) {
+		return resolve(getProperty(name, properties));
+	}
+	
+	String getProperty(String name, Properties properties) {
+		if (!ignoreNotFound && !properties.containsKey(name)) {
+			threx(PropertyResolveException::new, "未找到%s对应的配置信息!", name);
+		}
+		return properties.getProperty(name);
 	}
 
 }

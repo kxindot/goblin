@@ -7,6 +7,12 @@ import java.math.BigDecimal;
  */
 public class BigDecimalPropertyResolver extends AbstractPropertyResolver<BigDecimal> {
 
-    
+    public BigDecimalPropertyResolver() {
+    	this(null);
+    }
+
+    public BigDecimalPropertyResolver(String name) {
+    	super(name, BigDecimal.class);
+    }
     
 }

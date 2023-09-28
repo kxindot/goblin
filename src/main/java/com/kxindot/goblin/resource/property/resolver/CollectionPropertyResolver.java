@@ -7,8 +7,10 @@ import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.substringAfter;
 import static com.kxindot.goblin.Objects.substringBetween;
+import static com.kxindot.goblin.Reflections.newInstance;
 import static com.kxindot.goblin.Throws.threx;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
@@ -25,11 +27,11 @@ public abstract class CollectionPropertyResolver<E, C extends Collection<E>> ext
 	protected PropertyResolver<E> resolver;
 
 	public CollectionPropertyResolver(Class<?> type, PropertyResolver<E> resolver) {
-	    this(null, type, resolver);
+		this(null, type, resolver);
 	}
 
 	public CollectionPropertyResolver(String name, Class<?> type, PropertyResolver<E> resolver) {
-	    this(name, Comma, type, resolver);
+		this(name, Comma, type, resolver);
 	}
 
 	public CollectionPropertyResolver(String name, String seperator, Class<?> type, PropertyResolver<E> resolver) {
@@ -42,10 +44,10 @@ public abstract class CollectionPropertyResolver<E, C extends Collection<E>> ext
 	public Class<?> getElementType() {
 		return resolver.getType();
 	}
-	
+
 	@Override
 	public C resolve(String property) {
-		C c = instance();
+		C c = getInstance();
 		if (isNotNull(property)) {
 			String[] array = property.split(seperator);
 			for (String prop : array) {
@@ -56,7 +58,7 @@ public abstract class CollectionPropertyResolver<E, C extends Collection<E>> ext
 	}
 
 	@Override
-	protected C resovle(String name, Properties properties) {
+	protected C resolve(String name, Properties properties) {
 		C c = resolve(properties.getProperty(name));
 		Set<Object> keys = properties.keySet();
 		for (Object value : keys) {
@@ -75,9 +77,17 @@ public abstract class CollectionPropertyResolver<E, C extends Collection<E>> ext
 			int i = Integer.valueOf(substringBetween(index, "[", "]"));
 			set(c, i, e);
 		}
+		if (!ignoreNotFound && c.isEmpty()) {
+			threx(PropertyResolveException::new, "未找到%s对应的配置信息!", name);
+		}
 		return c;
 	}
-	
+
+	protected C getInstance() {
+		int mod = type.getModifiers();
+		return Modifier.isAbstract(mod) || Modifier.isInterface(mod) ? instance() : newInstance(type);
+	}
+
 	protected abstract void set(C collection, int index, E value);
 
 	protected abstract C instance();

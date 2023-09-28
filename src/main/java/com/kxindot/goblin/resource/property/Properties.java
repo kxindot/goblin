@@ -16,12 +16,9 @@ import java.lang.annotation.Target;
 public @interface Properties {
 
 	
-	String file();
-	
-	
 	String prefix() default "";
 	
 	
-	boolean ignoreUnknown() default true;
+	boolean ignoreNotFound() default true;
 	
 }
