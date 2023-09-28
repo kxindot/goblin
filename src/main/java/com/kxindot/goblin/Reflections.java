@@ -1,6 +1,7 @@
 package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Classes.isAssignableFrom;
+import static com.kxindot.goblin.Classes.isInstance;
 import static com.kxindot.goblin.Objects.asList;
 import static com.kxindot.goblin.Objects.convert;
 import static com.kxindot.goblin.Objects.copyOf;
@@ -664,11 +665,21 @@ public final class Reflections {
     }
     
     
+    public static Class<?> findGenericParameterType(Field field, int index) {
+    	requireTrue(index > -1, "Invalid index value : " + index);
+    	Type type = field.getGenericType();
+    	if (!isInstance(ParameterizedType.class, type)) {
+			threx(IllegalArgumentException::new, "%s不是泛型!", field.getType().getName());
+		}
+    	return Class.class.cast(ParameterizedType.class.cast(type).getActualTypeArguments()[index]);
+    }
+    
+    
     public static Class<?> findGenericParameterType(Class<?> cls, int index) {
         Class<?> scls = cls.getSuperclass();
         if (scls == Object.class)
 
-            requireTrue(index >= 0, "不合法的下标值: %d", index);
+        requireTrue(index >= 0, "不合法的下标值: %d", index);
         requireTrue(scls != Object.class, "%s没有继承的父类", cls.getSimpleName());
         int len = scls.getTypeParameters().length;
         requireTrue(len > 0, "%s的父类%s不是泛型类", cls.getSimpleName(), scls.getSimpleName());
