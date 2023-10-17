@@ -3,6 +3,9 @@ package com.kxindot.goblin.io;
 import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +15,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * IO便捷工具
@@ -99,6 +104,27 @@ public interface IO {
 		return in;
 	}
 	
+	
+	public static InputStream open(File file) {
+		InputStream in = null;
+		try {
+			in = new FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			silentThrex(e);
+		}
+		return in;
+	}
+
+	
+	public static InputStream open(Path path) {
+		InputStream in = null;
+		try {
+			in = Files.newInputStream(path);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return in;
+	}
 	
 	/**
 	 * 便捷方法: 调用{@link Closeable#close()}.

@@ -4,8 +4,8 @@ import static com.kxindot.goblin.Classes.getAvailableClassLoader;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Resources.readByte;
 import static com.kxindot.goblin.Throws.silentThrex;
-import static com.kxindot.goblin.resource.Resources.readByte;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
 import java.io.ByteArrayInputStream;

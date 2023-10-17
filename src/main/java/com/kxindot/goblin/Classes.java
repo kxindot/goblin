@@ -8,7 +8,7 @@ import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.substringBeforeLast;
-import static com.kxindot.goblin.resource.Resources.isJarFile;
+import static com.kxindot.goblin.Resources.isJarFile;
 
 import java.io.File;
 import java.io.IOException;

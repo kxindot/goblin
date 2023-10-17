@@ -8,19 +8,19 @@ import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Resources.Jar_Entry_Sep;
+import static com.kxindot.goblin.Resources.Jar_Extension;
+import static com.kxindot.goblin.Resources.exists;
+import static com.kxindot.goblin.Resources.getSimpleFileName;
+import static com.kxindot.goblin.Resources.isDirectory;
+import static com.kxindot.goblin.Resources.isFile;
+import static com.kxindot.goblin.Resources.isJarFile;
+import static com.kxindot.goblin.Resources.isJavaClassFile;
+import static com.kxindot.goblin.Resources.listFile;
+import static com.kxindot.goblin.Resources.loadJarResources;
+import static com.kxindot.goblin.Resources.loadResources;
 import static com.kxindot.goblin.compile.JavaDynamicClassLoader.classLoader;
 import static com.kxindot.goblin.compile.JavaDynamicClassLoader.defaultClassLoader;
-import static com.kxindot.goblin.resource.Resources.Jar_Entry_Sep;
-import static com.kxindot.goblin.resource.Resources.Jar_Extension;
-import static com.kxindot.goblin.resource.Resources.exists;
-import static com.kxindot.goblin.resource.Resources.getSimpleFileName;
-import static com.kxindot.goblin.resource.Resources.isDirectory;
-import static com.kxindot.goblin.resource.Resources.isFile;
-import static com.kxindot.goblin.resource.Resources.isJarFile;
-import static com.kxindot.goblin.resource.Resources.isJavaClassFile;
-import static com.kxindot.goblin.resource.Resources.listFile;
-import static com.kxindot.goblin.resource.Resources.loadJarResources;
-import static com.kxindot.goblin.resource.Resources.loadResources;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -46,7 +46,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
-import com.kxindot.goblin.resource.Resources.JarResourceLoader;
+import com.kxindot.goblin.Resources.JarResourceLoader;
 
 /**
  * Java动态编译文件管理器

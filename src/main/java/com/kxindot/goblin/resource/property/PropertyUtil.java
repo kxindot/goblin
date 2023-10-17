@@ -252,7 +252,7 @@ public class PropertyUtil {
 	 * 获取解析器
 	 */
 	@SuppressWarnings("unchecked")
-	private static <T> PropertyResolver<T> getResolver(Class<T> type) {
+	public static <T> PropertyResolver<T> getResolver(Class<T> type) {
 		if (resolvers == null) {
 			synchronized (PropertyUtil.class) {
 				if (null == resolvers) {

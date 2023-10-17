@@ -7,8 +7,8 @@ import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.newHashMap;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
-import static com.kxindot.goblin.resource.Resources.isJavaSourceFile;
-import static com.kxindot.goblin.resource.Resources.listFile;
+import static com.kxindot.goblin.Resources.isJavaSourceFile;
+import static com.kxindot.goblin.Resources.listFile;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
 import java.io.File;
@@ -24,7 +24,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 
-import com.kxindot.goblin.resource.Resources;
+import com.kxindot.goblin.Resources;
 
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
