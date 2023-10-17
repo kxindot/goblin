@@ -1541,7 +1541,7 @@ public final class Objects {
      * @throws IllegalArgumentException 若断言不成立,则抛出该异常
      */
     public static void requireFalse(boolean expression, String message) {
-        if (!expression) {
+        if (expression) {
             throw new IllegalArgumentException(message);
         }
     }
