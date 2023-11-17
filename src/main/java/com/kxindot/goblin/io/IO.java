@@ -6,6 +6,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,8 +17,12 @@ import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+
+import org.apache.commons.io.output.FileWriterWithEncoding;
 
 /**
  * IO便捷工具
@@ -104,8 +110,125 @@ public interface IO {
 		return in;
 	}
 	
+	/**
+	 * 获取文件输入字符流.
+	 * 
+	 * @param file File
+	 * @return Reader
+	 */
+	public static Reader openReader(File file) {
+		Reader reader = null;
+		try {
+			reader = new FileReader(file);
+		} catch (FileNotFoundException e) {
+			silentThrex(e);
+		}
+		return reader;
+	}
 	
-	public static InputStream open(File file) {
+	/**
+	 * 获取文件输入字符流.
+	 * 
+	 * @param file File
+	 * @return Reader
+	 */
+	public static Reader openReader(Path file) {
+		Reader reader = null;
+		try {
+			reader = Files.newBufferedReader(file);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return reader;
+	}
+	
+	/**
+	 * 获取文件输入字符流.
+	 * 
+	 * @param file File
+	 * @return Reader
+	 */
+	public static Reader openReader(Path file, Charset charset) {
+		Reader reader = null;
+		try {
+			reader = Files.newBufferedReader(file, charset);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return reader;
+	}
+	
+	/**
+	 * 获取文件输出字符流.
+	 * 
+	 * @param file Path
+	 * @return Writer
+	 */
+	public static Writer openWriter(File file) {
+		Writer writer = null;
+		try {
+			writer = new FileWriter(file);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return writer;
+	}
+	
+	/**
+	 * 获取文件输出字符流.
+	 * 
+	 * @param file Path
+	 * @return Writer
+	 */
+	public static Writer openWriter(Path file) {
+		Writer writer = null;
+		try {
+			writer = Files.newBufferedWriter(file);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return writer;
+	}
+	
+	/**
+	 * 获取文件输出字符流.
+	 * 
+	 * @param file Path
+	 * @return Writer
+	 */
+	public static Writer openWriter(File file, Charset charset) {
+		Writer writer = null;
+		try {
+			writer = new FileWriterWithEncoding(file, charset);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return writer;
+	}
+	
+	/**
+	 * 获取文件输出字符流.
+	 * 
+	 * @param file Path
+	 * @return Writer
+	 */
+	public static Writer openWriter(Path file, Charset charset) {
+		Writer writer = null;
+		try {
+			writer = Files.newBufferedWriter(file, charset);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return writer;
+	}
+	
+	/**
+	 * 获取文件输入流.
+	 * 
+	 * @param file File
+	 * @return InputStream
+	 */
+	public static InputStream openInputStream(File file) {
 		InputStream in = null;
 		try {
 			in = new FileInputStream(file);
@@ -115,8 +238,13 @@ public interface IO {
 		return in;
 	}
 
-	
-	public static InputStream open(Path path) {
+	/**
+	 * 获取文件输入流
+	 * 
+	 * @param path Path
+	 * @return InputStream
+	 */
+	public static InputStream openInputStream(Path path) {
 		InputStream in = null;
 		try {
 			in = Files.newInputStream(path);
@@ -124,6 +252,56 @@ public interface IO {
 			silentThrex(e);
 		}
 		return in;
+	}
+	
+	/**
+	 * 获取文件输入流.
+	 * 
+	 * @param path Path
+	 * @param options OpenOption[]
+	 * @return InputStream
+	 */
+	public static InputStream openInputStream(Path path, OpenOption... options) {
+		InputStream in = null;
+		try {
+			in = Files.newInputStream(path, options);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return in;
+	}
+	
+	/**
+	 * 获取文件输出流.
+	 * 
+	 * @param path Path
+	 * @return OutputStream
+	 */
+	public static OutputStream openOutputStream(Path path) {
+		OutputStream out = null;
+		try {
+			out = Files.newOutputStream(path);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return out;
+	}
+	
+	/**
+	 * 获取文件输出流.
+	 * 
+	 * @param path Path
+	 * @param options OpenOption[]
+	 * @return OutputStream
+	 */
+	public static OutputStream openOutputStream(Path path, OpenOption... options) {
+		OutputStream out = null;
+		try {
+			out = Files.newOutputStream(path, options);
+		} catch (IOException e) {
+			silentThrex(e);
+		}
+		return out;
 	}
 	
 	/**

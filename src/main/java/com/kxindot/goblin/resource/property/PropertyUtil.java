@@ -34,13 +34,23 @@ public class PropertyUtil {
 	 * @return {@link Properties}
 	 */
     public static Properties load(InputStream in) {
-        Properties properties = new Properties();
-        try {
-            properties.load(in);
-        } catch (IOException e) {
-            silentThrex(e, "加载数据流异常!");
-        }
-        return properties;
+        return load(in, false);
+    }
+    
+    /**
+     * 从输入流中加载配置.返回{@link Properties}对象.
+     * @param in InputStream
+     * @param ordered 按顺序加载
+     * @return {@link Properties}
+     */
+    public static Properties load(InputStream in, boolean ordered) {
+    	Properties properties = ordered ? new OrderedProperties() : new Properties();
+    	try {
+    		properties.load(in);
+    	} catch (IOException e) {
+    		silentThrex(e, "加载数据流异常!");
+    	}
+    	return properties;
     }
     
 	/**
@@ -49,13 +59,23 @@ public class PropertyUtil {
 	 * @return {@link Properties}
 	 */
     public static Properties load(Reader reader) {
-        Properties properties = new Properties();
-        try {
-            properties.load(reader);
-        } catch (IOException e) {
-            silentThrex(e, "加载字符数据流异常!");
-        }
-        return properties;
+        return load(reader, false);
+    }
+    
+    /**
+     * 从字符输入流中加载配置.返回{@link Properties}对象.
+     * @param reader Reader
+     * @param ordered 按顺序加载
+     * @return {@link Properties}
+     */
+    public static Properties load(Reader reader, boolean ordered) {
+    	Properties properties = ordered ? new OrderedProperties() : new Properties();
+    	try {
+    		properties.load(reader);
+    	} catch (IOException e) {
+    		silentThrex(e, "加载字符数据流异常!");
+    	}
+    	return properties;
     }
 
     /**

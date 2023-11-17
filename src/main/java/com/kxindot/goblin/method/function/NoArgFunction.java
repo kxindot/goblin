@@ -1,5 +1,6 @@
 package com.kxindot.goblin.method.function;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
 /**
@@ -8,4 +9,4 @@ import java.util.function.Function;
  * @param <R> Method Return type
  */
 @FunctionalInterface
-public interface NoArgFunction<T, R> extends Function<T, R> {}
+public interface NoArgFunction<T, R> extends Function<T, R>, Serializable {}

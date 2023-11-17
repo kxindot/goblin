@@ -1,5 +1,6 @@
 package com.kxindot.goblin.method.function;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
 import com.kxindot.goblin.Objects;
@@ -13,7 +14,7 @@ import com.kxindot.goblin.Objects;
  * @param <R> Method Return type
  */
 @FunctionalInterface
-public interface ThreeArgFunction<T, P1, P2, P3, R> {
+public interface ThreeArgFunction<T, P1, P2, P3, R> extends Serializable {
     
     R apply(T t, P1 p1, P2 p2, P3 p3);
     

@@ -1,5 +1,6 @@
 package com.kxindot.goblin.method.function;
 
+import java.io.Serializable;
 import java.util.function.BiFunction;
 
 /**
@@ -9,4 +10,4 @@ import java.util.function.BiFunction;
  * @param <R> Method Return type
  */
 @FunctionalInterface
-public interface OneArgFunction<T, P, R> extends BiFunction<T, P, R> {}
+public interface OneArgFunction<T, P, R> extends BiFunction<T, P, R>, Serializable {}

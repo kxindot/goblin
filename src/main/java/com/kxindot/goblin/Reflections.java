@@ -11,6 +11,7 @@ import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.requireNotBlank;
+import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.requireTrue;
 import static com.kxindot.goblin.Objects.unmodifiableEmptyList;
 import static com.kxindot.goblin.Throws.threx;
@@ -20,6 +21,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -32,6 +34,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.kxindot.goblin.method.function.NoArgConsumer;
+import com.kxindot.goblin.method.function.NoArgFunction;
+import com.kxindot.goblin.method.function.OneArgConsumer;
+import com.kxindot.goblin.method.function.OneArgFunction;
+import com.kxindot.goblin.method.function.ThreeArgConsumer;
+import com.kxindot.goblin.method.function.ThreeArgFunction;
+import com.kxindot.goblin.method.function.TwoArgConsumer;
+import com.kxindot.goblin.method.function.TwoArgFunction;
 import com.kxindot.goblin.typeconvert.TypeConvertException;
 
 /**
@@ -59,6 +69,113 @@ public final class Reflections {
      */
     public static final Filter<Method> ACCEPT_ALL_METHOD = (m, t) -> {return true;};
     
+    
+	private static final String WRITE_REPLACE = "writeReplace";
+	
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param consumer 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T> String getMethodName(NoArgConsumer<T> consumer) {
+		return getMethodNameByReference(consumer);
+	}
+	
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param consumer 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, U> String getMethodName(OneArgConsumer<T, U> consumer) {
+		return getMethodNameByReference(consumer);
+	}
+	
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param <T>
+	 * @param consumer 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, P1, P2> String getMethodName(TwoArgConsumer<T, P1, P2> consumer) {
+		return getMethodNameByReference(consumer);
+	}
+	
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param <T>
+	 * @param consumer 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, P1, P2, P3> String getMethodName(ThreeArgConsumer<T, P1, P2, P3> consumer) {
+		return getMethodNameByReference(consumer);
+	}
+	
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param <T>
+	 * @param function 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, R> String getMethodName(NoArgFunction<T, R> function) {
+		return getMethodNameByReference(function);
+	}
+	
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param <T>
+	 * @param function 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, P, R> String getMethodName(OneArgFunction<T, P, R> function) {
+		return getMethodNameByReference(function);
+	}
+
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param <T>
+	 * @param function 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, P1, P2, R> String getMethodName(TwoArgFunction<T, P1, P2, R> function) {
+		return getMethodNameByReference(function);
+	}
+
+	/**
+	 * 根据方法引用对象获取方法名称.
+	 * 
+	 * @param <T>
+	 * @param function 方法引用
+	 * @return String 方法名称
+	 */
+	public static <T, P1, P2, P3, R> String getMethodName(ThreeArgFunction<T, P1, P2, P3, R> function) {
+		return getMethodNameByReference(function);
+	}
+	
+	/**
+	 * 获取方法名称.入参必须为方法引用.如: 
+	 * <pre>
+	 * 静态方法引用: String::valueOf
+	 * 实例方法引用: str::toString -> String str;
+	 * </pre>
+	 * 
+	 * @param reference 方法引用
+	 * @return String
+	 */
+	private static String getMethodNameByReference(Object reference) {
+		Class<?> type = reference.getClass();
+		Method method = Reflections.findMethod(type, WRITE_REPLACE);
+		requireNotNull(method, "入参不是一个方法引用对象!");
+		Reflections.makeAccessiable(method);
+		Object result = Reflections.invoke(reference, method);
+		return SerializedLambda.class.cast(result).getImplMethodName();
+	}
     
     
     /**

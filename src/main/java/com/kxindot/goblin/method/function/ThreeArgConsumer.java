@@ -1,5 +1,7 @@
 package com.kxindot.goblin.method.function;
 
+import java.io.Serializable;
+
 import com.kxindot.goblin.Objects;
 
 /**
@@ -10,7 +12,7 @@ import com.kxindot.goblin.Objects;
  * @param <P3> Method Third Parameter Type
  */
 @FunctionalInterface
-public interface ThreeArgConsumer<T, P1, P2, P3> {
+public interface ThreeArgConsumer<T, P1, P2, P3> extends Serializable {
 
     void accept(T t, P1 p1, P2 p2, P3 p3);
 

@@ -851,7 +851,7 @@ public class Resources {
     
     
     public static String readString(Path path) {
-    	return load(IO.open(path)).readString();
+    	return load(IO.openInputStream(path)).readString();
     }
     
     

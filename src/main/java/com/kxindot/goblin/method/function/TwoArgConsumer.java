@@ -1,5 +1,7 @@
 package com.kxindot.goblin.method.function;
 
+import java.io.Serializable;
+
 import com.kxindot.goblin.Objects;
 
 /**
@@ -9,7 +11,7 @@ import com.kxindot.goblin.Objects;
  * @param <P2> Method Second Parameter Type
  */
 @FunctionalInterface
-public interface TwoArgConsumer<T, P1, P2> {
+public interface TwoArgConsumer<T, P1, P2> extends Serializable {
 
     
     void accept(T t, P1 p1, P2 p2);
