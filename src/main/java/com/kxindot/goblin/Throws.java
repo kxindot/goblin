@@ -6,9 +6,12 @@ import static com.kxindot.goblin.Objects.isNotNull;
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.stringFormat;
 
+import java.io.IOException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import com.kxindot.goblin.io.IIOException;
 
 /**
  * 异常相关便捷工具方法
@@ -266,12 +269,17 @@ public final class Throws {
      */
     public static void silentThrex(Throwable exception, String format, Object... args) throws WrapperException {
         if (isNotNull(exception)) {
-            if (RuntimeException.class.isInstance(exception)) 
-                throw RuntimeException.class.cast(exception);
+            if (RuntimeException.class.isInstance(exception)) {
+            	throw RuntimeException.class.cast(exception);
+            }
             format = stringFormat(format, args);
-            if (isBlank(format)) 
-                format = exception.getMessage();
+            if (isBlank(format)) {
+            	format = exception.getMessage();
+            }
             format = stringFormat("Cause: %s, Message: %s", exception.getClass().getSimpleName(), format);
+            if (IOException.class.isInstance(exception)) {
+				throw new IIOException(format, exception);
+			}
             throw new WrapperException(format, exception);
         }
     }
