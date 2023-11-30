@@ -43,8 +43,10 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.io.IIOException;
@@ -833,24 +835,70 @@ public class Resources {
         return mkDirs(parent.resolve(child));
     }
     
+    /**
+     * 删除文件或文件夹.若不存在,不做任何操作;
+     * 若存在且是文件夹,则会删除此文件夹及此文件夹下的所有文件和文件夹.
+     * 
+     * @param file File
+     */
     public static void deleteIfExists(File file) {
     	deleteIfExists(file.toPath());
     }
     
+    /**
+     * 删除文件或文件夹.若不存在,不做任何操作;
+     * 若存在且是文件夹,则会删除此文件夹及此文件夹下的所有文件和文件夹.
+     * 
+     * @param path Path
+     */
     public static void deleteIfExists(Path path) {
-    	if (!exists(path)) {
-    		return;
-    	} else if (isFile(path)) {
+    	if (isFile(path)) {
+    		delete(path);
+		} else if (isDirectory(path)) {
+			Stream<Path> list = null;
 			try {
-				Files.delete(path);
+				list = Files.list(path);
 			} catch (IOException e) {
-				threx(IIOException::new, e, "delete file %s failed!", path);
+				silentThrex(e);
 			}
-			return ;
+			Iterator<Path> iterator = list.iterator();
+			while (iterator.hasNext()) {
+				deleteIfExists((Path) iterator.next());
+			}
+			delete(path);
+			list.close();
 		}
-    	for (Path subPath : path) {
-			deleteIfExists(subPath);
-		}
+    }
+    
+    /**
+     * 删除文件.
+     * 
+     * @see Files#delete(Path)
+     * @param path Path
+     */
+    public static void delete(Path path) {
+    	try {
+    		Files.delete(path);
+    	} catch (IOException e) {
+    		silentThrex(e, "delete file %s failed!", path);
+    	}
+    }
+    
+    /**
+     * 获取文件夹遍历器.递归遍历此文件夹下的所有文件及文件夹.
+     * 
+     * @param directory Path
+     * @param consumer {@code Consumer<Path>}
+     */
+    public static void iterate(Path directory, Consumer<Path> consumer) {
+    	try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
+    		Iterator<Path> iterator = stream.iterator();
+    		while (iterator.hasNext()) {
+				consumer.accept((Path) iterator.next());
+			}
+        } catch (IOException e) {
+        	threx(IIOException::new, e);
+        }
     }
     
     

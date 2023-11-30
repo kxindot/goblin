@@ -33,7 +33,9 @@ import java.util.jar.JarFile;
  * @author ZhaoQingJiang
  */
 public final class Classes {
-    
+	
+	/** 空的Class数组(长度为0) */
+    public static final Class<?>[] EMPTY_CLS_ARRAY = new Class<?>[0];
     /** 包分隔符: . */
     public static final String Package_Separator = ".";
     /** 路径分隔符: / */

@@ -2,6 +2,7 @@ package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Classes.isAssignableFrom;
 import static com.kxindot.goblin.Classes.isInstance;
+import static com.kxindot.goblin.Objects.EMPTY_OBJ_ARRAY;
 import static com.kxindot.goblin.Objects.asList;
 import static com.kxindot.goblin.Objects.convert;
 import static com.kxindot.goblin.Objects.copyOf;
@@ -48,16 +49,6 @@ import com.kxindot.goblin.typeconvert.TypeConvertException;
  * @author ZhaoQingJiang
  */
 public final class Reflections {
-    
-    /**
-     * 空的Object数组(长度为0)
-     */
-    static final Object[] EMP_OBJ_ARR = new Object[0];
-
-    /**
-     * 空的Class数组(长度为0)
-     */
-    static final Class<?>[] EMP_CLS_ARR = new Class<?>[0];
     
     /**
      * 默认域过滤器,不过滤任何域.
@@ -800,7 +791,7 @@ public final class Reflections {
         requireTrue(scls != Object.class, "%s没有继承的父类", cls.getSimpleName());
         int len = scls.getTypeParameters().length;
         requireTrue(len > 0, "%s的父类%s不是泛型类", cls.getSimpleName(), scls.getSimpleName());
-        requireTrue(len >= index, null, EMP_OBJ_ARR);
+        requireTrue(len >= index, null, EMPTY_OBJ_ARRAY);
         Type st = cls.getGenericSuperclass();
         requireTrue(st != null && st instanceof ParameterizedType, "类%s之父类不是泛型类!", cls.getSimpleName());
 
@@ -1015,7 +1006,7 @@ public final class Reflections {
      */
     public static Object invokeSmartly(Object obj, Method method, Object... args) {
         if (args == null)
-            args = EMP_OBJ_ARR;
+            args = EMPTY_OBJ_ARRAY;
         int len = args.length;
         if (len != method.getParameterCount()) {
 //            throw new ReflectionException("Method parameter count not match, require %d, input %d",
