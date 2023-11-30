@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -650,6 +651,20 @@ public final class Objects {
         }
         buf.append(text.substring(start));
         return buf.toString();
+    }
+    
+    /**
+     * 删除字符串中指定子串.
+     * 
+     * @param str String
+     * @param remove String
+     * @return String
+     */
+    public static String stringRemove(String str, String remove) {
+        if (isEmpty(str) || isEmpty(remove)) {
+            return str;
+        }
+        return stringReplace(str, remove, EMP, -1, false);
     }
     
     /**
@@ -2226,6 +2241,26 @@ public final class Objects {
     
     public static <T> Set<T> newHashSet(Collection<T> collection) {
         return new HashSet<>(collection);
+    }
+    
+    public static <T> Set<T> newLinkedHashSet() {
+    	return new LinkedHashSet<>();
+    }
+    
+    public static <T> Set<T> newLinkedHashSet(int capacity) {
+        return new LinkedHashSet<>(capacity);
+    }
+    
+    @SafeVarargs
+    public static <T> Set<T> newLinkedHashSet(T... array) {
+    	requireNotNull(array);
+    	Set<T> set = newLinkedHashSet(Math.max((int) (array.length/.75f) + 1, 16));
+    	Stream.of(array).forEach(e -> set.add(e));
+    	return set;
+    }
+    
+    public static <T> Set<T> newLinkedHashSet(Collection<T> collection) {
+    	return new LinkedHashSet<>(collection);
     }
     
     public static <T> BlockingQueue<T> newArrayBlockingQueue(int capacity) {
