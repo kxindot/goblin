@@ -9,12 +9,14 @@ import static com.kxindot.goblin.Objects.Colon;
 import static com.kxindot.goblin.Objects.Dot;
 import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.Exclamation;
+import static com.kxindot.goblin.Objects.Hyphen;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.stringRemove;
 import static com.kxindot.goblin.Throws.silentThrex;
 import static com.kxindot.goblin.Throws.threx;
 import static java.io.File.separator;
@@ -45,11 +47,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import com.kxindot.goblin.exception.RuntimeException;
+import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
 import com.kxindot.goblin.io.IOOutput;
 import com.kxindot.goblin.io.IOReader;
 import com.kxindot.goblin.io.IOWriter;
+import com.kxindot.goblin.io.Zip;
 
 /**
  * 
@@ -277,6 +281,26 @@ public class Resources {
             }
         }
         return c;
+    }
+    
+    /**
+     * 获取随机UUID.
+     * 
+     * @return String
+     */
+    public static String UUID() {
+    	return UUID(false);
+    }
+    
+    /**
+     * 获取随机UUID.
+     * 
+     * @param keepHyphen 是否保留分割线.
+     * @return String
+     */
+    public static String UUID(boolean keepHyphen) {
+    	String uuid = java.util.UUID.randomUUID().toString();
+    	return keepHyphen ? uuid : stringRemove(uuid, Hyphen);
     }
     
     /**
@@ -809,7 +833,25 @@ public class Resources {
         return mkDirs(parent.resolve(child));
     }
     
+    public static void deleteIfExists(File file) {
+    	deleteIfExists(file.toPath());
+    }
     
+    public static void deleteIfExists(Path path) {
+    	if (!exists(path)) {
+    		return;
+    	} else if (isFile(path)) {
+			try {
+				Files.delete(path);
+			} catch (IOException e) {
+				threx(IIOException::new, e, "delete file %s failed!", path);
+			}
+			return ;
+		}
+    	for (Path subPath : path) {
+			deleteIfExists(subPath);
+		}
+    }
     
     
     /**************************************************IO**************************************************/
@@ -883,6 +925,29 @@ public class Resources {
     public static void writeAndClose(OutputStream out, CharSequence content) {
     	load(out).write(content).close();
     }
+    
+    
+    /**************************************************文件压缩与解压缩**************************************************/
+    
+    /**
+     * 获取zip压缩对象.
+     * 
+     * @return Zip
+     */
+    public static Zip zip() {
+    	return new Zip();
+    }
+    
+    /**
+     * 获取zip压缩对象.
+     * 
+     * @param bufSize 缓冲区大小
+     * @return Zip
+     */
+    public static Zip zip(int bufSize) {
+    	return new Zip();
+    }
+    
     
     
     /**
