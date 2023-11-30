@@ -8,40 +8,44 @@ import static com.kxindot.goblin.Objects.requireTrue;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.Resources.isFile;
+import static com.kxindot.goblin.Resources.iterate;
 import static com.kxindot.goblin.Throws.silentThrex;
-import static com.kxindot.goblin.Throws.threx;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import com.kxindot.goblin.logger.Logger;
 import com.kxindot.goblin.logger.LoggerFactory;
+import com.kxindot.goblin.method.MethodReference;
+import com.kxindot.goblin.thread.ThreadExecutor;
+import com.kxindot.goblin.thread.ThreadFactory;
 
 /**
  * @author ZhaoQingJiang
  */
 public class FileWatcher {
 
+	private static ThreadFactory factory = new ThreadFactory("goblin-FileWatcher");
 	private static Logger logger = LoggerFactory.getLogger(FileWatcher.class);
 	private Path directory;
 	private WatchService service;
 	private List<Whistle> whistles;
 	private Map<Path, Boolean> cache;
+	private ThreadExecutor executor;
+	private volatile boolean monitoring = false;
 	
 	public FileWatcher(Path directory) {
 		requireNotNull(directory, "directory == null");
@@ -55,28 +59,21 @@ public class FileWatcher {
 			silentThrex(e);
 		}
 		this.cache = newConcurrentHashMap();
-		buildCache(directory);
+		iterate(directory, e -> cache.put(e, isFile(e)));
 		this.whistles = Collections.synchronizedList(newArrayList());
+		executor = new ThreadExecutor(Executors.newSingleThreadExecutor(factory));
 	}
-	
-	private void buildCache(Path path) {
-		this.cache.put(path, isFile(path));
-		if (isDirectory(path)) {
-			try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-	            Iterator<Path> iterator = stream.iterator();
-	            while (iterator.hasNext()) {
-	            	buildCache((Path) iterator.next());
-	            }
-	        } catch (IOException e) {
-	        	threx(IIOException::new, e);
-	        }
-		}
-	}
-	
+
 	public void add(Whistle whistle) {
 		if (isNotNull(whistle)) {
 			whistles.add(whistle);
 		}
+	}
+	
+	public synchronized void watchAsync() {
+		if (monitoring) return;
+		MethodReference.noArgs(FileWatcher::watch).invokeAsync(this, executor);
+		this.monitoring = true;
 	}
 	
 	public void watch() {
@@ -103,6 +100,9 @@ public class FileWatcher {
 	}
 	
 	public void close() {
+		if (!executor.isShutdown()) {
+			executor.shutdown();
+		}
 		try {
 			service.close();
 		} catch (IOException e) {

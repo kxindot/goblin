@@ -33,6 +33,7 @@ import com.kxindot.goblin.method.reference.TwoArgConsumerReference;
 import com.kxindot.goblin.method.reference.TwoArgConsumerReference.TwoArgConsumerReferenceImpl;
 import com.kxindot.goblin.method.reference.TwoArgFunctionReference;
 import com.kxindot.goblin.method.reference.TwoArgFunctionReference.TwoArgFunctionReferenceImpl;
+import com.kxindot.goblin.thread.ThreadExecutor;
 import com.kxindot.goblin.thread.Threads;
 
 import net.sf.cglib.proxy.MethodProxy;
@@ -85,6 +86,8 @@ public interface MethodReference<T, R> {
     R invoke(T obj);
     
     Future<R> invokeAsync(T obj);
+    
+    Future<R> invokeAsync(T obj, ThreadExecutor executor);
     
     
     /**
@@ -163,6 +166,12 @@ public interface MethodReference<T, R> {
         public Future<R> invokeAsync(T obj) {
             this.obj = Objects.requireNotNull(obj);
             return Threads.submit(this.new Runner());
+        }
+        
+        @Override
+        public Future<R> invokeAsync(T obj, ThreadExecutor executor) {
+        	this.obj = Objects.requireNotNull(obj);
+        	return executor.submit(this.new Runner());
         }
         
         /**
