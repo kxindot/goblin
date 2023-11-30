@@ -1,5 +1,8 @@
 package com.kxindot.goblin.proxy;
 
+import static com.kxindot.goblin.Objects.isNotEmpty;
+import static com.kxindot.goblin.Objects.newArrayList;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,34 +23,45 @@ public abstract class CallbackHelper implements CallbackFilter {
     private Class superClass;
     private Map methodMap = new HashMap();
     private List callbacks = new ArrayList();
+    protected List<com.kxindot.goblin.proxy.Callback> list;
 
     public CallbackHelper(Class superclass, Class[] interfaces) {
-        this.superClass = superclass;
-        List methods = new ArrayList();
-        Enhancer.getMethods(superclass, interfaces, methods);
-        Map indexes = new HashMap();
-        for (int i = 0, size = methods.size(); i < size; i++) {
-            Method method = (Method) methods.get(i);
-            Object callback = getCallback(method);
-            if (callback == null)
-                throw new IllegalStateException("getCallback cannot return null");
-            boolean isCallback = callback instanceof Callback;
-            if (!(isCallback || (callback instanceof Class)))
-                throw new IllegalStateException("getCallback must return a Callback or a Class");
-            if (i > 0 && ((callbacks.get(i - 1) instanceof Callback) ^ isCallback))
-                throw new IllegalStateException(
-                        "getCallback must return a Callback or a Class consistently for every Method");
-            Integer index = (Integer) indexes.get(callback);
-            if (index == null) {
-                index = new Integer(callbacks.size());
-                indexes.put(callback, index);
-            }
-            methodMap.put(method, index);
-            callbacks.add(callback);
-        }
+        this(superclass, interfaces, new com.kxindot.goblin.proxy.Callback[0]);
+    }
+    
+    public CallbackHelper(Class superclass, Class[] interfaces, com.kxindot.goblin.proxy.Callback... callbacks) {
+    	this.superClass = superclass;
+    	if (isNotEmpty(callbacks)) {
+			this.list = newArrayList(callbacks);
+		}
+    	List methods = new ArrayList();
+    	Enhancer.getMethods(superclass, interfaces, methods);
+    	Map indexes = new HashMap();
+    	for (int i = 0, size = methods.size(); i < size; i++) {
+    		Method method = (Method) methods.get(i);
+    		Object callback = getCallback(method);
+    		if (callback == null) {
+				
+			}
+    		if (callback == null)
+    			throw new IllegalStateException("getCallback cannot return null");
+    		boolean isCallback = callback instanceof Callback;
+    		if (!(isCallback || (callback instanceof Class)))
+    			throw new IllegalStateException("getCallback must return a Callback or a Class");
+    		if (i > 0 && ((this.callbacks.get(i - 1) instanceof Callback) ^ isCallback))
+    			throw new IllegalStateException(
+    					"getCallback must return a Callback or a Class consistently for every Method");
+    		Integer index = (Integer) indexes.get(callback);
+    		if (index == null) {
+    			index = new Integer(this.callbacks.size());
+    			indexes.put(callback, index);
+    		}
+    		methodMap.put(method, index);
+    		this.callbacks.add(callback);
+    	}
     }
 
-    abstract protected Object getCallback(Method method);
+    protected abstract Object getCallback(Method method);
 
     public Callback[] getCallbacks() {
         if (callbacks.size() == 0)
