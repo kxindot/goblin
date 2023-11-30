@@ -1,4 +1,4 @@
-package com.kxindot.goblin.io;
+package com.kxindot.goblin.io.file;
 
 import static com.kxindot.goblin.Objects.isNotNull;
 import static com.kxindot.goblin.Objects.isNull;
@@ -28,6 +28,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import com.kxindot.goblin.EnumValue;
+import com.kxindot.goblin.io.IIOException;
+import com.kxindot.goblin.io.IO;
 
 /**
  * 压缩工具,提供.zip,.gzip,.rar格式等定制化压缩.

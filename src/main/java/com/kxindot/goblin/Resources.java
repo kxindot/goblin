@@ -55,7 +55,7 @@ import com.kxindot.goblin.io.IOInput;
 import com.kxindot.goblin.io.IOOutput;
 import com.kxindot.goblin.io.IOReader;
 import com.kxindot.goblin.io.IOWriter;
-import com.kxindot.goblin.io.Zip;
+import com.kxindot.goblin.io.file.Zip;
 
 /**
  * 
