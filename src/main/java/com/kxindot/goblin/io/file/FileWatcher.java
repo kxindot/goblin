@@ -15,6 +15,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
@@ -81,7 +82,11 @@ public class FileWatcher {
 			WatchKey key;
 			try {
 				key = service.take();
-			} catch (InterruptedException e) {
+			} catch (ClosedWatchServiceException e) {
+				logger.info("关闭文件夹监听: {}", directory);
+				return;
+			} catch (Throwable e) {
+				logger.error("Unexpected file watch exception, directory : {}", directory, e);
 				return;
 			}
 			if (key.isValid()) {
@@ -100,13 +105,13 @@ public class FileWatcher {
 	}
 	
 	public void close() {
-		if (!executor.isShutdown()) {
-			executor.shutdown();
-		}
 		try {
 			service.close();
 		} catch (IOException e) {
 			silentThrex(e);
+		}
+		if (!executor.isShutdown()) {
+			executor.shutdown();
 		}
 	}
 	
