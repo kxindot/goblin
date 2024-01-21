@@ -7,6 +7,7 @@ import static com.kxindot.goblin.Objects.newHashMap;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Objects.substringAfter;
 import static com.kxindot.goblin.Objects.substringBeforeLast;
 import static com.kxindot.goblin.Resources.isJarFile;
 
@@ -236,8 +237,8 @@ public final class Classes {
                     return isJavaLang(className.substring(++index));
                 }
             }
-        } else if (className.startsWith(java_lang)) {
-            return check ? exists(className) : true;
+        }if (className.startsWith(java_lang)) {
+        	return substringAfter(className, java_lang).contains(Package_Separator) ? false : check ? exists(className) : true;
         } else if (!className.contains(Package_Separator)) {
             return exists(String.join(Package_Separator, java_lang, className));
         }
