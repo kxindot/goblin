@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.kxindot.goblin.random.WeightItem;
 import com.kxindot.goblin.random.WeightRandomChooser;
-import com.kxindot.goblin.testkit.JunitTests;
+import com.kxindot.goblin.test.JunitTests;
 
 /**
  * @author ZhaoQingJiang
@@ -37,29 +37,29 @@ public class RandomChooserTests extends JunitTests {
         random.add("同学d", 0.315d);
         random.add("同学e", 0.28d);
         random.add("同学f", 0.055d);
-        logger.info("运行前:");
-        logger.info("项目\t权重");
+        println("运行前:");
+        println("项目\t权重");
         for (WeightItem<String> item : random.items()) {
-            logger.info("{}\t{}", item.getItem(), item.getWeight());
+            println("{}\t{}", item.getItem(), item.getWeight());
         }
-        logger.info("总计:\t{}", random.items().stream().mapToDouble(WeightItem::getWeight).sum());
+        println("总计:\t{}", random.items().stream().mapToDouble(WeightItem::getWeight).sum());
         Map<String, AtomicInteger> statis = newTreeMap();
         long time = System.currentTimeMillis();
         for (int i = 0; i < stc; i++) {
             statis.computeIfAbsent(random.choose().getItem(), c -> new AtomicInteger()).incrementAndGet();
         }
-        logger.info("运行后:");
-        logger.info("总用时:\t{}毫秒", System.currentTimeMillis() - time);
-        logger.info("项目\t次数\t比率");
+        println("运行后:");
+        println("总用时:\t{}毫秒", System.currentTimeMillis() - time);
+        println("项目\t次数\t比率");
         double tr = 0;
         for (Map.Entry<String, AtomicInteger> entry : statis.entrySet()) {
             String k = entry.getKey();
             int c = entry.getValue().get();
             double r = c / (double) stc;
             tr += r;
-            logger.info("{}\t{}\t{}", k, c, r);
+            println("{}\t{}\t{}", k, c, r);
         }
-        logger.info("总计:\t{}\t{}", stc, tr);
+        println("总计:\t{}\t{}", stc, tr);
     }
     
 }

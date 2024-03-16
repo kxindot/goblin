@@ -1,17 +1,15 @@
 package com.kxindot.goblin.resource.property;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.kxindot.goblin.testkit.JunitTests;
+import com.kxindot.goblin.test.JunitTests;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -163,8 +161,8 @@ class PropertyUtilTest extends JunitTests {
 	void testGetJavaBeanClassOfTProperties() {
 		School school = PropertyUtil.getJavaBean(School.class, properties);
 		Student student = PropertyUtil.getJavaBean(Student.class, properties);
-		logger.info("school: {}", school);
-		logger.info("student: {}", student);
+		println("school: {}", school);
+		println("student: {}", student);
 	}
 
 }

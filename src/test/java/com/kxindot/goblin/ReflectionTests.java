@@ -15,7 +15,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.kxindot.goblin.testkit.JunitTests;
+import com.kxindot.goblin.test.JunitTests;
 
 import lombok.Data;
 
