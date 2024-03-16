@@ -48,7 +48,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
@@ -171,8 +170,8 @@ public class Resources {
                 }
             }
         } catch (Exception e) {
-            throw new ResourceLoadException(e, 
-                    "Error occurred when loading resources from URL : %s", url);
+            throw new ResourceLoadException( 
+                    "Error occurred when loading resources from URL : " + url, e);
         }
         return (T) c;
     }
@@ -249,8 +248,8 @@ public class Resources {
             JarFile file = JarURLConnection.class.cast(url.openConnection()).getJarFile();
             return loadJarResources(url, file, loader);
         } catch (Exception e) {
-            throw new ResourceLoadException(e, 
-                    "Error occurred when loading resources from jar : %s", url);
+            throw new ResourceLoadException(
+                    "Error occurred when loading resources from jar : " + url, e);
         }
     }
     
@@ -1116,17 +1115,17 @@ public class Resources {
 
         private static final long serialVersionUID = -2197349031983803955L;
 
-        public ResourceLoadException(Throwable cause, String message, Object... args) {
-            super(cause, message, args);
-        }
+		protected ResourceLoadException(String message, Throwable cause) {
+			super(message, cause);
+		}
 
-        public ResourceLoadException(Throwable cause, String message) {
-            super(cause, message);
-        }
+		protected ResourceLoadException(String message) {
+			super(message);
+		}
 
-        public ResourceLoadException(Throwable cause) {
-            super(cause);
-        }
+		protected ResourceLoadException(Throwable cause) {
+			super(cause);
+		}
     }
     
 }
