@@ -3,11 +3,11 @@ package com.kxindot.goblin;
 import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.contains;
 import static com.kxindot.goblin.Objects.isBlank;
+import static com.kxindot.goblin.Objects.isEqual;
 import static com.kxindot.goblin.Objects.newHashMap;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
-import static com.kxindot.goblin.Objects.substringAfter;
 import static com.kxindot.goblin.Objects.substringBeforeLast;
 import static com.kxindot.goblin.Resources.isJarFile;
 
@@ -238,7 +238,7 @@ public final class Classes {
                 }
             }
         }if (className.startsWith(java_lang)) {
-        	return substringAfter(className, java_lang).contains(Package_Separator) ? false : check ? exists(className) : true;
+        	return !isEqual(substringBeforeLast(className, Package_Separator), java_lang) ? false : check ? exists(className) : true;
         } else if (!className.contains(Package_Separator)) {
             return exists(String.join(Package_Separator, java_lang, className));
         }
@@ -444,26 +444,26 @@ public final class Classes {
     }
     
     /**
-     * 获取类所在包名
+     * 获取类所在包名.
+     * 
      * @param cls {@code Class<?>}
      * @return String
      */
     public static String getPackageName(Class<?> cls) {
-        return getPackageName(cls.getName());
+        return cls.getPackage().getName();
     }
     
     /**
-     * 根据全类名获取类所在包名
-     * @param className 全类名
+     * 根据全类名获取类所在包名.
+     *
+     * @param fullName 全类名
      * @return String
      */
-    public static String getPackageName(String className) {
-        requireNotBlank(className);
-        String clsName = className;
-        if (clsName.contains(Path_Separator)) {
-            clsName = toPackagePattern(clsName);
+    public static String getPackageName(String fullName) {
+        if (fullName.contains(Path_Separator)) {
+        	fullName = toPackagePattern(fullName);
         }
-        return substringBeforeLast(clsName, Package_Separator);
+        return substringBeforeLast(fullName, Package_Separator);
     }
     
     /**
