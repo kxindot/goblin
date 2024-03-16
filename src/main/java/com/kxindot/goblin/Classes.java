@@ -135,6 +135,7 @@ public final class Classes {
     
     /**
      * 判断当前进程是否在JAR包中运行
+     * 
      * @return boolean
      */
     public static boolean isPackaged() {
@@ -143,6 +144,7 @@ public final class Classes {
     
     /**
      * 判断当前进程是否在JAR包中运行
+     * 
      * @param classLoader ClassLoader
      * @return boolean
      */
@@ -152,6 +154,7 @@ public final class Classes {
     
     /**
      * 判断是否基础数据类型
+     * 
      * @param cls {@code Class<?>}
      * @return boolean
      */
@@ -161,6 +164,7 @@ public final class Classes {
     
     /**
      * 判断是否基础数据类型或包装类型
+     * 
      * @param cls {@code Class<?>}
      * @return boolean
      */
@@ -170,6 +174,7 @@ public final class Classes {
     
     /**
      * 判断是否基础数据包装类型
+     * 
      * @param cls {@code Class<?>}
      * @return boolean
      */
@@ -179,6 +184,7 @@ public final class Classes {
     
     /**
      * 判断是否基础数据类型数组
+     * 
      * @param cls 类型
      * @return boolean
      */
@@ -189,6 +195,7 @@ public final class Classes {
     
     /**
      * 判断类名是否基础数据类型数组
+     * 
      * @param className 全类名
      * @return boolean
      */
@@ -201,12 +208,19 @@ public final class Classes {
         return false;
     }
     
+    /**
+     * 判断类是否是泛型类.
+     * 
+     * @param cls Class
+     * @return boolean
+     */
     public static boolean isGeneric(Class<?> cls) {
         return cls.getTypeParameters().length > 0;
     }
     
     /**
-     * 判断类是否归属于java.lang包
+     * 判断类是否归属于java.lang包.
+     * 
      * @param cls Class
      * @return boolean
      */
@@ -216,7 +230,8 @@ public final class Classes {
     }
     
     /**
-     * 判断类是否归属于java.lang包(不含其子包)
+     * 判断类是否归属于java.lang包(不含其子包).
+     * 
      * @param className 类名
      * @return boolean
      */
@@ -330,7 +345,8 @@ public final class Classes {
     
     
     /**
-     * 获取线程上下文类加载器.若无则返回null
+     * 获取线程上下文类加载器.若无则返回null.
+     * 
      * @return ClassLoader
      */
     public static ClassLoader getThreadContextClassLoader() {
@@ -369,7 +385,8 @@ public final class Classes {
     
     
     /**
-     * 判断类Class是否内部类
+     * 判断类Class是否内部类.
+     * 
      * @param cls 类Class
      * @return boolean
      */
@@ -378,7 +395,8 @@ public final class Classes {
     }
     
     /**
-     * 判断类Class是否接口(interface)
+     * 判断类Class是否接口(interface).
+     * 
      * @param cls 类Class
      * @return boolean
      */
@@ -387,7 +405,8 @@ public final class Classes {
     }
     
     /**
-     * 判断类Class是否抽象类
+     * 判断类Class是否抽象类.
+     * 
      * @param cls 类Class
      * @return boolean
      */
@@ -396,12 +415,19 @@ public final class Classes {
     }
     
     /**
-     * 判断类Class是否接口(interface)或是抽象类
+     * 判断类Class是否接口(interface)或是抽象类.
+     * 
      * @param cls 类Class
      * @return boolean
      */
     public static boolean isInterfaceOrAbstractClass(Class<?> cls) {
         return isInterface(cls) || isAbstractClass(cls);
+    }
+    
+    
+    public static boolean endWithJavaExtension(CharSequence cs) {
+    	
+    	return false;
     }
     
     /**

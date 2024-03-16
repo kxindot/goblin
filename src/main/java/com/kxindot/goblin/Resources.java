@@ -306,6 +306,11 @@ public class Resources {
     }
     
     /**
+     * 文件分隔符
+     */
+    public static final String FILE_SEPERATOR = File.separator;
+    
+    /**
      * 判断文件/文件夹是否存在
      * @param file File
      * @return boolean

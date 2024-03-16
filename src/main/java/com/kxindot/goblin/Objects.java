@@ -3,6 +3,7 @@ package com.kxindot.goblin;
 import static com.kxindot.goblin.Reflections.newArrayInstance;
 import static com.kxindot.goblin.Throws.silentThrex;
 
+import java.beans.Introspector;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -37,6 +38,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.maven.shared.utils.StringUtils;
 
 import com.kxindot.goblin.asserts.Asserts;
 import com.kxindot.goblin.asserts.CharSequenceAssert;
@@ -444,6 +447,36 @@ public final class Objects {
     }
     
     /**
+     * 将字符串的首写字符由小写改为大写,例子如下: 
+     * <pre>
+     * capitalize(null) : null
+     * capitalize("") : ""
+     * capitalize("   ") : "   "
+     * capitalize("fooBar") : "FooBar"
+     * capitalize("FooBar") : "FooBar"
+     * capitalize("X") : "X"
+     * capitalize("x") : "X"
+     * capitalize("URL") : "url"
+     * capitalize("URLParser") : "urlParser"
+     * </pre>
+     * 
+     * @param cs CharSequence
+     * @return String
+     */
+	public static String capitalize(CharSequence cs) {
+		String str = null;
+		if (isNotNull(cs)) {
+			int length = cs.length();
+			str = length == 0 ? EMP
+			        : new StringBuilder(length)
+			        		.append(Character.toTitleCase(cs.charAt(0)))
+			        		.append(cs, 1, length)
+			                .toString();
+		}
+		return str;
+	}
+    
+    /**
      * 将字符串的首写字符由大写改为小写,例子如下:
      * <pre>
      * decapitalize(null) : null
@@ -456,6 +489,7 @@ public final class Objects {
      * decapitalize("URL") : "url"
      * decapitalize("URLParser") : "urlParser"
      * </pre>
+     * 
      * @param cs CharSequence
      * @return String
      */
