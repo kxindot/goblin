@@ -3,6 +3,7 @@ package com.kxindot.goblin.logger;
 import static com.kxindot.goblin.Objects.LF;
 import static com.kxindot.goblin.Objects.countMatch;
 import static com.kxindot.goblin.Objects.isEmpty;
+import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.stringFormat;
 import static com.kxindot.goblin.Objects.stringJoinWith;
@@ -35,17 +36,27 @@ class LoggerImpl implements Logger {
     private final org.slf4j.Logger logger;
     private boolean loggerEnable = true;
     private Level level;
+    private boolean enablePattern;
     
     protected LoggerImpl(String name) {
-        this(null, name);
+        this(null, name, true);
+    }
+    
+    protected LoggerImpl(String name, boolean enablePattern) {
+    	this(null, name, enablePattern);
     }
     
     protected LoggerImpl(org.slf4j.Logger logger, String name) {
-        if (logger == null || logger instanceof NOPLogger) {
-            this.loggerEnable = false;
-        }
-        this.logger = logger;
-        this.name = name;
+    	this(logger, name, true);
+    }
+    
+    protected LoggerImpl(org.slf4j.Logger logger, String name, boolean enablePattern) {
+    	if (logger == null || logger instanceof NOPLogger) {
+    		this.loggerEnable = false;
+    	}
+    	this.logger = logger;
+    	this.name = requireNotBlank(name, "name不能为空!");
+    	this.enablePattern = enablePattern;
     }
     
     protected void setLocalLevel(Level level) {
@@ -310,11 +321,11 @@ class LoggerImpl implements Logger {
 
     void log(Level level, String message, Object... args) {
         if ((int) level.value() >= this.level.value()) {
-            message = stringFormat(Pattern, 
+            message = enablePattern ? stringFormat(Pattern, 
                     level.keyword(),
                     Thread.currentThread().getName(), 
                     Timer.format(LocalDateTime.now()), 
-                    name, format(message, args));
+                    name, format(message, args)) : format(message, args);
             if (level == Level.ERROR) {
                 System.err.println(message);
             } else {
