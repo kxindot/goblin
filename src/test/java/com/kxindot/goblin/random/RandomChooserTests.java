@@ -1,4 +1,4 @@
-package com.kxindot.goblin;
+package com.kxindot.goblin.random;
 
 import static com.kxindot.goblin.Objects.newTreeMap;
 
@@ -7,8 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
-import com.kxindot.goblin.random.WeightItem;
-import com.kxindot.goblin.random.WeightRandomChooser;
 import com.kxindot.goblin.test.JunitTests;
 
 /**
@@ -18,16 +16,6 @@ public class RandomChooserTests extends JunitTests {
 
     int stc = 100000;
     
-    @Override
-    public void beforeEach() {
-        
-    }
-
-    @Override
-    public void afterEach() {
-        
-    }
-
     @Test
     public void singleTheadTest() {
         WeightRandomChooser<String> random = new WeightRandomChooser<>();
