@@ -5,13 +5,17 @@ import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.getAvailableClassLoader;
 import static com.kxindot.goblin.Classes.toPackagePattern;
 import static com.kxindot.goblin.Classes.toPathPattern;
+import static com.kxindot.goblin.Objects.Backslash;
 import static com.kxindot.goblin.Objects.Colon;
 import static com.kxindot.goblin.Objects.Dot;
 import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.Exclamation;
 import static com.kxindot.goblin.Objects.Hyphen;
+import static com.kxindot.goblin.Objects.Slash;
+import static com.kxindot.goblin.Objects.containsAny;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
+import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
@@ -48,13 +52,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
+import com.kxindot.goblin.compress.Zip;
 import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
 import com.kxindot.goblin.io.IOOutput;
 import com.kxindot.goblin.io.IOReader;
 import com.kxindot.goblin.io.IOWriter;
-import com.kxindot.goblin.io.file.Zip;
 
 /**
  * 
@@ -62,6 +66,21 @@ import com.kxindot.goblin.io.file.Zip;
  * @author ZhaoQingJiang
  */
 public class Resources {
+	
+	/**
+     * 文件分隔符
+     */
+    public static final String FILE_SEPERATOR = File.separator;
+    
+    /**
+     * Unix文件分隔符
+     */
+    public static final String UNIX_SEPERATOR = Slash;
+    
+    /**
+     * Windows文件分隔符
+     */
+    public static final String WINDOWS_SEPERATOR = Backslash;
     
     /**
      * jar包URL协议头: jar
@@ -305,11 +324,6 @@ public class Resources {
     }
     
     /**
-     * 文件分隔符
-     */
-    public static final String FILE_SEPERATOR = File.separator;
-    
-    /**
      * 判断文件/文件夹是否存在
      * @param file File
      * @return boolean
@@ -451,19 +465,132 @@ public class Resources {
     }
     
     /**
-     * Parse and get a file simple name.<br>
-     * e.g: input "/Users/Jack/Documents/Test.txt", then output "Test".
-     * @param fileName String
-     * @return String
+     * 获取不带扩展名的文件名，例如：
+     * <pre>
+     * D:\\Documents\\Test.txt : Test
+     * /Users/Jack/Documents/Test.txt : Test
+     * </pre>
+     * 
+     * @param file 文件路径
+     * @return 不带扩展名的文件名
      */
-    public static String getSimpleFileName(String fileName) {
-        if (fileName.contains(File.separator)) {
-            fileName = fileName.substring(fileName.lastIndexOf(Path_Separator) + 1);
-        }
-        if (fileName.contains(Dot)) {
-            fileName = fileName.substring(0, fileName.lastIndexOf(Dot));
-        }
-        return fileName;
+    public static String getFileNameWithoutExt(Path file) {
+    	return isDirectory(file) ? file.getFileName().toString() 
+    			: isFile(file) ? getFileNameWithoutExt(file.getFileName().toString()) : null;
+    }
+    
+    /**
+     * 获取不带扩展名的文件名，例如：
+     * <pre>
+     * D:\\Documents\\Test.txt : Test
+     * /Users/Jack/Documents/Test.txt : Test
+     * </pre>
+     * 
+     * @param file 文件
+     * @return 不带扩展名的文件名
+     */
+    public static String getFileNameWithoutExt(File file) {
+    	return isDirectory(file) ? file.getName() 
+    			: isFile(file) ? getFileNameWithoutExt(file.getName()) : null;
+    }
+    
+    /**
+     * 获取不带扩展名的文件名，例如：
+     * <pre>
+     * Test.txt : Test
+     * D:\\Documents\\Test.txt : Test
+     * /Users/Jack/Documents/Test.txt : Test
+     * </pre>
+     * 
+     * @param fileName 文件名
+     * @return 不带扩展名的文件名
+     */
+    public static String getFileNameWithoutExt(String fileName) {
+    	if (isNull(fileName)) {
+			return null;
+		}
+    	int i = fileName.lastIndexOf(FILE_SEPERATOR);
+    	if (i != -1) {
+			fileName = fileName.substring(i + 1);
+		}
+    	i = fileName.lastIndexOf(Dot);
+        return i == -1 ? fileName : fileName.substring(0, i);
+    }
+    
+    /**
+     * 获取文件扩展名，例如：“.txt”。
+     * 
+     * @param file 文件路径
+     * @return 文件扩展名
+     */
+    public static String getFileExt(Path file) {
+    	return isFile(file) ? getFileExt(file.getFileName().toString()) : null;
+    }
+    
+    /**
+     * 获取文件扩展名，例如：“.txt”。
+     * 
+     * @param file 文件
+     * @return 文件扩展名
+     */
+    public static String getFileExt(File file) {
+    	return isFile(file) ? getFileExt(file.getName()) : null;
+    }
+    
+    /**
+     * 获取文件扩展名，例如：“.txt”。
+     * 
+     * @param fileName 文件名
+     * @return 文件扩展名
+     */
+    public static String getFileExt(String fileName) {
+    	if (isNull(fileName)) {
+			return null;
+		}
+    	int i = fileName.lastIndexOf(Dot);
+    	if (i == -1) {
+			return EMP;
+		}
+    	String ext = fileName.substring(i);
+    	return containsAny(ext, UNIX_SEPERATOR, WINDOWS_SEPERATOR) ? EMP : ext;
+    }
+    
+    /**
+     * 获取不带"."的文件扩展名，例如：“txt”。
+     * 
+     * @param file 文件路径
+     * @return 不带"."的文件扩展名
+     */
+    public static String getFileExtWithoutDot(Path file) {
+    	return isFile(file) ? getFileExt(file.getFileName().toString()) : null;
+    }
+    
+    /**
+     * 获取不带"."的文件扩展名，例如：“txt”。
+     * 
+     * @param file 文件
+     * @return 不带"."的文件扩展名
+     */
+    public static String getFileExtWithoutDot(File file) {
+    	return isFile(file) ? getFileExt(file.getName()) : null;
+    }
+    
+    /**
+     * 获取不带"."的文件扩展名，例如：“txt”。
+     * 
+     * @param file 文件
+     * @return 不带"."的文件扩展名
+     */
+    public static String getFileExtWithoutDot(String fileName) {
+    	if (isNull(fileName)) {
+			return null;
+		}
+    	int i = fileName.lastIndexOf(Dot);
+    	if (i == -1) {
+			return EMP;
+		}
+    	String ext = fileName.substring(i + 1);
+    	return containsAny(ext, UNIX_SEPERATOR, WINDOWS_SEPERATOR) ? EMP : ext;
     }
     
     public static List<File> listFile(File file) {
