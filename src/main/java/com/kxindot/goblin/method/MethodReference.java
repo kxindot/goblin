@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 
 import com.kxindot.goblin.Objects;
 import com.kxindot.goblin.concurrent.ThreadCompletableExecutor;
+import com.kxindot.goblin.concurrent.Threads;
 import com.kxindot.goblin.method.function.NoArgConsumer;
 import com.kxindot.goblin.method.function.NoArgFunction;
 import com.kxindot.goblin.method.function.OneArgConsumer;
@@ -34,7 +35,6 @@ import com.kxindot.goblin.method.reference.TwoArgConsumerReference;
 import com.kxindot.goblin.method.reference.TwoArgConsumerReference.TwoArgConsumerReferenceImpl;
 import com.kxindot.goblin.method.reference.TwoArgFunctionReference;
 import com.kxindot.goblin.method.reference.TwoArgFunctionReference.TwoArgFunctionReferenceImpl;
-import com.kxindot.goblin.thread.Threads;
 
 import net.sf.cglib.proxy.MethodProxy;
 
@@ -288,7 +288,7 @@ public interface MethodReference<T, R> {
         @Override
         public Future<R> invokeAsync(T obj) {
             this.obj = requireNotNull(obj);
-            return Threads.submit(this.new Caller());
+            return Threads.runAsync(this.new Caller());
         }
         
         @Override
