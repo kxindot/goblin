@@ -11,7 +11,7 @@ import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Resources.Jar_Entry_Sep;
 import static com.kxindot.goblin.Resources.Jar_Extension;
 import static com.kxindot.goblin.Resources.exists;
-import static com.kxindot.goblin.Resources.getSimpleFileName;
+import static com.kxindot.goblin.Resources.getFileNameWithoutExt;
 import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.Resources.isFile;
 import static com.kxindot.goblin.Resources.isJarFile;
@@ -208,7 +208,7 @@ public class JavaDynamicFileManager extends ForwardingJavaFileManager<JavaFileMa
             List<Path> paths = listFile(path, filter, true);
             paths.forEach(e -> addDependencies(e));
         } else if (isJavaClassFile(path)) {
-            String className = getSimpleFileName(path.getFileName().toString());
+            String className = getFileNameWithoutExt(path.getFileName().toString());
             addDependency(new JavaDynamicFile(className, path.toUri(), CLASS));
         } else if (isJarFile(path)) {
             Collection<JavaFileObject> resources = 
