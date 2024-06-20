@@ -6,7 +6,6 @@ import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.Objects.isEqual;
 import static com.kxindot.goblin.Objects.newHashMap;
 import static com.kxindot.goblin.Objects.newHashSet;
-import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.substringBeforeLast;
 import static com.kxindot.goblin.Resources.isJarFile;
