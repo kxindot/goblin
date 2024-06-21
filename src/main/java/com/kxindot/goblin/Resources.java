@@ -55,7 +55,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import com.kxindot.goblin.compress.Zip;
+import com.kxindot.goblin.codec.compress.Zip;
+import com.kxindot.goblin.codec.compress.ZipCompresser;
 import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
@@ -476,6 +477,7 @@ public class Resources {
      * 
      * @param file 文件路径
      * @return 不带扩展名的文件名
+     * @since 1.1.8
      */
     public static String getFileNameWithoutExt(Path file) {
     	return isDirectory(file) ? file.getFileName().toString() 
@@ -491,6 +493,7 @@ public class Resources {
      * 
      * @param file 文件
      * @return 不带扩展名的文件名
+     * @since 1.1.8
      */
     public static String getFileNameWithoutExt(File file) {
     	return isDirectory(file) ? file.getName() 
@@ -507,6 +510,7 @@ public class Resources {
      * 
      * @param fileName 文件名
      * @return 不带扩展名的文件名
+     * @since 1.1.8
      */
     public static String getFileNameWithoutExt(String fileName) {
     	if (isNull(fileName)) {
@@ -525,6 +529,7 @@ public class Resources {
      * 
      * @param file 文件路径
      * @return 文件扩展名
+     * @since 1.1.8
      */
     public static String getFileExt(Path file) {
     	return isFile(file) ? getFileExt(file.getFileName().toString()) : null;
@@ -535,6 +540,7 @@ public class Resources {
      * 
      * @param file 文件
      * @return 文件扩展名
+     * @since 1.1.8
      */
     public static String getFileExt(File file) {
     	return isFile(file) ? getFileExt(file.getName()) : null;
@@ -545,6 +551,7 @@ public class Resources {
      * 
      * @param fileName 文件名
      * @return 文件扩展名
+     * @since 1.1.8
      */
     public static String getFileExt(String fileName) {
     	if (isNull(fileName)) {
@@ -563,6 +570,7 @@ public class Resources {
      * 
      * @param file 文件路径
      * @return 不带"."的文件扩展名
+     * @since 1.1.8
      */
     public static String getFileExtWithoutDot(Path file) {
     	return isFile(file) ? getFileExt(file.getFileName().toString()) : null;
@@ -573,6 +581,7 @@ public class Resources {
      * 
      * @param file 文件
      * @return 不带"."的文件扩展名
+     * @since 1.1.8
      */
     public static String getFileExtWithoutDot(File file) {
     	return isFile(file) ? getFileExt(file.getName()) : null;
@@ -583,6 +592,7 @@ public class Resources {
      * 
      * @param file 文件
      * @return 不带"."的文件扩展名
+     * @since 1.1.8
      */
     public static String getFileExtWithoutDot(String fileName) {
     	if (isNull(fileName)) {
@@ -981,6 +991,7 @@ public class Resources {
      * @param newName 新名称
      * @return 重命名后的文件或文件夹路径
      * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
      */
     public static Path rename(Path path, String newName) {
     	return rename(path, newName, true);
@@ -998,6 +1009,7 @@ public class Resources {
      * @param newName 新名称
      * @return 重命名后的文件或文件夹
      * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
      */
     public static File rename(File file, String newName) {
     	return rename(file, newName, true);
@@ -1016,6 +1028,7 @@ public class Resources {
      * @param override 是否覆盖
      * @return 重命名后的文件或文件夹路径
      * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
      */
     public static Path rename(Path path, String newName, boolean override) {
     	requireNotBlank(newName, "file new name can't be null or blank");
@@ -1043,6 +1056,7 @@ public class Resources {
      * @param override 是否覆盖
      * @return 重命名后的文件或文件夹
      * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
      */
     public static File rename(File file, String newName, boolean override) {
     	return rename(file.toPath(), newName, override).toFile();
@@ -1191,25 +1205,24 @@ public class Resources {
     /**************************************************文件压缩与解压缩**************************************************/
     
     /**
-     * 获取zip压缩对象.
+     * 获取Zip文件格式压缩工具。
      * 
-     * @return Zip
+     * @return {@link ZipCompresser}
      */
-    public static Zip zip() {
+    public static ZipCompresser zip() {
     	return new Zip();
     }
     
     /**
-     * 获取zip压缩对象.
+     * 获取Zip文件格式压缩工具。
      * 
      * @param bufSize 缓冲区大小
-     * @return Zip
+     * @return {@link ZipCompresser}
      */
     public static Zip zip(int bufSize) {
-    	return new Zip();
+    	return new Zip(bufSize);
     }
-    
-    
+
     
     /**
      * @author zhaoqingjiang
