@@ -11,7 +11,7 @@
 
     <name>goblin</name>
     <url>https://github.com/kxindot/goblin</url>
-    <description>各种便捷工具封装</description>
+    <description>哥布林基础工具</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
