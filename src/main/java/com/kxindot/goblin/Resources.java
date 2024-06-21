@@ -13,6 +13,7 @@ import static com.kxindot.goblin.Objects.Exclamation;
 import static com.kxindot.goblin.Objects.Hyphen;
 import static com.kxindot.goblin.Objects.Slash;
 import static com.kxindot.goblin.Objects.containsAny;
+import static com.kxindot.goblin.Objects.isEqual;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
@@ -38,11 +39,13 @@ import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -964,6 +967,85 @@ public class Resources {
             threx(IllegalArgumentException::new, "%s不是%s的子目录!", child, parent);
         }
         return mkDirs(parent.resolve(child));
+    }
+    
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则目标文件会被覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param path 文件或文件夹路径
+     * @param newName 新名称
+     * @return 重命名后的文件或文件夹路径
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     */
+    public static Path rename(Path path, String newName) {
+    	return rename(path, newName, true);
+    }
+
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则目标文件会被覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param file 文件或文件夹
+     * @param newName 新名称
+     * @return 重命名后的文件或文件夹
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     */
+    public static File rename(File file, String newName) {
+    	return rename(file, newName, true);
+    }
+    
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则会根据override值判定是否覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param path 文件或文件夹路径
+     * @param newName 新名称
+     * @param override 是否覆盖
+     * @return 重命名后的文件或文件夹路径
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     */
+    public static Path rename(Path path, String newName, boolean override) {
+    	requireNotBlank(newName, "file new name can't be null or blank");
+    	if (!isEqual(path.getFileName().toString(), newName)) {
+    		CopyOption[] options = override ? new CopyOption[] {StandardCopyOption.REPLACE_EXISTING} : new CopyOption[] {};
+    		try {
+    			path = Files.move(path, path.resolveSibling(newName), options);
+    		} catch (IOException e) {
+    			silentThrex(e, "rename file or directory failed: %s", e.getMessage());
+    		}
+    	}
+    	return path;
+    }
+    
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则会根据override值判定是否覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param file 文件或文件夹
+     * @param newName 新名称
+     * @param override 是否覆盖
+     * @return 重命名后的文件或文件夹
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     */
+    public static File rename(File file, String newName, boolean override) {
+    	return rename(file.toPath(), newName, override).toFile();
     }
     
     /**
