@@ -1,4 +1,4 @@
-package com.kxindot.goblin.codec.compress;
+package com.kxindot.goblin.codec;
 
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.requireNotNull;
@@ -25,12 +25,7 @@ import com.kxindot.goblin.io.IIOException;
  * 
  * @author ZhaoQingJiang
  */
-public class Zip extends AbstractCompresser<ZipCompresser> implements ZipCompresser {
-	
-	/**
-	 * 压缩文件后缀: .zip
-	 */
-	public static final String EXSTENSION = ".zip";
+class ZipCompresser extends AbstractCompresser<Zip> implements Zip {
 	
 	/** 压缩级别[0-9],数字越大文件越小,压缩效率越低 */
 	private int level = -1;
@@ -39,29 +34,29 @@ public class Zip extends AbstractCompresser<ZipCompresser> implements ZipCompres
 	/** 注释 */
 	private String comment;
 	
-	public Zip() {
+	ZipCompresser() {
 		super();
 	}
 
-	public Zip(int bufSize) {
+	ZipCompresser(int bufSize) {
 		super(bufSize);
 	}
 
-	
-	public Zip level(int level) {
+	@Override
+	public ZipCompresser level(int level) {
 		requireTrue(level >= 0 && level <= 9, "压缩等级取值: [0,9]");
 		this.level = level;
 		return this;
 	}
 	
 	@Override
-	public ZipCompresser algorithm(ZipAlgorithm algorithm) {
+	public Zip algorithm(ZipAlgorithm algorithm) {
 		this.method = requireNotNull(method, "method == null");
 		return this;
 	}
 
 	@Override
-	public ZipCompresser comment(CharSequence comment) {
+	public Zip comment(CharSequence comment) {
 		this.comment = comment.toString();
 		return this;
 	}
@@ -98,7 +93,7 @@ public class Zip extends AbstractCompresser<ZipCompresser> implements ZipCompres
 	}
 
 	@Override
-	protected Zip self() {
+	protected ZipCompresser self() {
 		return this;
 	}
 

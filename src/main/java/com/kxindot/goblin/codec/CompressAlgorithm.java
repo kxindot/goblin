@@ -1,4 +1,4 @@
-package com.kxindot.goblin.codec.compress;
+package com.kxindot.goblin.codec;
 
 /**
  * 压缩算法。

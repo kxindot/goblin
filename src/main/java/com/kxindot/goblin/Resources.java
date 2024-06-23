@@ -55,8 +55,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import com.kxindot.goblin.codec.compress.Zip;
-import com.kxindot.goblin.codec.compress.ZipCompresser;
 import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
@@ -1201,28 +1199,6 @@ public class Resources {
     	load(out).write(content).close();
     }
     
-    
-    /**************************************************文件压缩与解压缩**************************************************/
-    
-    /**
-     * 获取Zip文件格式压缩工具。
-     * 
-     * @return {@link ZipCompresser}
-     */
-    public static ZipCompresser zip() {
-    	return new Zip();
-    }
-    
-    /**
-     * 获取Zip文件格式压缩工具。
-     * 
-     * @param bufSize 缓冲区大小
-     * @return {@link ZipCompresser}
-     */
-    public static Zip zip(int bufSize) {
-    	return new Zip(bufSize);
-    }
-
     
     /**
      * @author zhaoqingjiang

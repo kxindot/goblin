@@ -1,4 +1,4 @@
-package com.kxindot.goblin.codec.compress;
+package com.kxindot.goblin.codec;
 
 import java.io.File;
 import java.io.InputStream;
@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 
 /**
- * 文件压缩器。
+ * 压缩编码器。
  * 
  * @author ZhaoQingJiang
  */

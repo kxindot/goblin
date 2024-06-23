@@ -1,4 +1,4 @@
-package com.kxindot.goblin.codec.compress;
+package com.kxindot.goblin.codec;
 
 import static com.kxindot.goblin.Objects.isNotNull;
 import static com.kxindot.goblin.Objects.isNull;
@@ -29,7 +29,7 @@ import com.kxindot.goblin.io.IO;
  * 
  * @author ZhaoQingJiang
  */
-public abstract class AbstractCompresser<T extends Compresser<T>> implements Compresser<T> {
+abstract class AbstractCompresser<T extends Compresser<T>> implements Compresser<T> {
 	
 	private volatile boolean closed = false;
 	protected byte[] buf;

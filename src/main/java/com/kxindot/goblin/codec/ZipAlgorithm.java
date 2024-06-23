@@ -1,4 +1,4 @@
-package com.kxindot.goblin.codec.compress;
+package com.kxindot.goblin.codec;
 
 import com.kxindot.goblin.EnumValue;
 
