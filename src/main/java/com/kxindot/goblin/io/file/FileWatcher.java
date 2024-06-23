@@ -28,11 +28,12 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import com.kxindot.goblin.concurrent.ThreadExecutor;
+import com.kxindot.goblin.concurrent.ThreadFactory;
+import com.kxindot.goblin.concurrent.Threads;
 import com.kxindot.goblin.logger.Logger;
 import com.kxindot.goblin.logger.LoggerFactory;
 import com.kxindot.goblin.method.MethodReference;
-import com.kxindot.goblin.thread.ThreadExecutor;
-import com.kxindot.goblin.thread.ThreadFactory;
 
 /**
  * @author ZhaoQingJiang
@@ -62,7 +63,7 @@ public class FileWatcher {
 		this.cache = newConcurrentHashMap();
 		iterate(directory, e -> cache.put(e, isFile(e)));
 		this.whistles = Collections.synchronizedList(newArrayList());
-		executor = new ThreadExecutor(Executors.newSingleThreadExecutor(factory));
+		executor = Threads.newThreadExecutor(Executors.newSingleThreadExecutor(factory));
 	}
 
 	public void add(Whistle whistle) {

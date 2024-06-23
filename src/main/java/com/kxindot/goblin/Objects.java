@@ -279,6 +279,16 @@ public final class Objects {
     }
     
     /**
+     * 判断字符序列是否不为空,即不等null且长度大于0.
+     * 
+     * @param cs CharSequence
+     * @return 若字符序列不等于null且长度大于0,则返回true,反之false
+     */
+    public static boolean isNotEmpty(CharSequence cs) {
+    	return !isEmpty(cs);
+    }
+    
+    /**
      * 判断传入参数是否 <b><i>等于</i></b> null或空字符串(仅含有空格)
      * <pre>
      * isBlank(null)      = true
@@ -420,6 +430,44 @@ public final class Objects {
     }
     
     /**
+     * 查找字符序列是否包含指定字符数组中任意一个字符。
+     * 
+     * @param cs 字符序列
+     * @param chars 字符数组
+     * @return 若字符序列包含字符数组中任意一个字符，则返回true，反正false
+     */
+    public static boolean containsAny(CharSequence cs, char... chars) {
+    	if (isNotEmpty(cs)) {
+    		char[] array = cs.toString().toCharArray();
+    		for (int i = 0; i < chars.length; i++) {
+    			if (contains(array, chars[i])) {
+					return true;
+				}
+    		}
+		}
+    	return false;
+    }
+    
+    /**
+     * 查找字符序列是否包含指定字符序列数组中任意一个序列。
+     * 
+     * @param cs 字符序列
+     * @param css 字符序列数组
+     * @return 若字符序列包含字符序列数组中任意一个序列，则返回true，反之false
+     */
+    public static boolean containsAny(CharSequence cs, CharSequence... css) {
+    	if (isNotEmpty(cs) && isNotEmpty(css)) {
+			String str = cs.toString();
+    		for (int i = 0; i < css.length; i++) {
+				if (str.contains(css[i])) {
+					return true;
+				}
+			}
+		}
+    	return false;
+    }
+    
+    /**
      * 依据字符串是否为空字符串("")或null返回其本身或默认值.
      * 若传入的字符串(value)不等于空字符串("")或null,则返回该字符串,反之返回默认字符串(defaultValue).
      * @param <T> CharSequence类型
@@ -444,6 +492,36 @@ public final class Objects {
     }
     
     /**
+     * 将字符串的首写字符由小写改为大写,例子如下: 
+     * <pre>
+     * capitalize(null) : null
+     * capitalize("") : ""
+     * capitalize("   ") : "   "
+     * capitalize("fooBar") : "FooBar"
+     * capitalize("FooBar") : "FooBar"
+     * capitalize("X") : "X"
+     * capitalize("x") : "X"
+     * capitalize("URL") : "url"
+     * capitalize("URLParser") : "urlParser"
+     * </pre>
+     * 
+     * @param cs CharSequence
+     * @return String
+     */
+	public static String capitalize(CharSequence cs) {
+		String str = null;
+		if (isNotNull(cs)) {
+			int length = cs.length();
+			str = length == 0 ? EMP
+			        : new StringBuilder(length)
+			        		.append(Character.toTitleCase(cs.charAt(0)))
+			        		.append(cs, 1, length)
+			                .toString();
+		}
+		return str;
+	}
+    
+    /**
      * 将字符串的首写字符由大写改为小写,例子如下:
      * <pre>
      * decapitalize(null) : null
@@ -456,6 +534,7 @@ public final class Objects {
      * decapitalize("URL") : "url"
      * decapitalize("URLParser") : "urlParser"
      * </pre>
+     * 
      * @param cs CharSequence
      * @return String
      */
@@ -1754,12 +1833,7 @@ public final class Objects {
      * @return - 若包含则返回true,反之false
      */
     public static boolean contains(char[] cs, char c) {
-        for (char e : cs) {
-            if (e == c) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.binarySearch(cs, c) >= 0;
     }
     
     /**
@@ -2644,6 +2718,21 @@ public final class Objects {
      */
     public static <T extends Map<?, ?>, R> R doIfNotEmpty(T value, Function<T, R> function) {
         return isEmpty(value) ? null : function.apply(value);
+    }
+    
+    /**
+     * 若指定对象value等于null,则使用默认值执行{@link Consumer#accept(Object)}方法.
+     * 否则直接返回,不做任何操作.
+     * 
+     * @param <T> 入参类型
+     * @param value 对象值
+     * @param consumer {@code Consumer<T>}
+     * @param defaultValue 默认值
+     */
+    public static <T> void setIfNull(T value, Consumer<T> consumer, T defaultValue) {
+    	if (value == null) {
+			consumer.accept(defaultValue);
+		}
     }
     
     /**

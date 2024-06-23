@@ -25,7 +25,8 @@ import java.nio.file.Path;
 import org.apache.commons.io.output.FileWriterWithEncoding;
 
 /**
- * IO便捷工具
+ * IO便捷工具。
+ * TODO 从BIO实现替换为NIO实现
  * 
  * @author ZhaoQingJiang
  */

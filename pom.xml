@@ -6,12 +6,12 @@
 
     <groupId>com.kxindot</groupId>
     <artifactId>goblin</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.8</version>
     <packaging>jar</packaging>
 
     <name>goblin</name>
     <url>https://github.com/kxindot/goblin</url>
-    <description>各种便捷工具封装</description>
+    <description>哥布林基础工具</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,7 +22,6 @@
         <log4j2.version>[2.17.1,)</log4j2.version>
         <lombok.version>1.18.4</lombok.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <spring.version>5.3.29</spring.version>
     </properties>
 
     <dependencies>
@@ -41,7 +40,7 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -67,21 +66,9 @@
             <version>${commons-codec.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.maven.shared</groupId>
             <artifactId>maven-invoker</artifactId>
             <version>3.2.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <version>2.2.7.RELEASE</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -168,8 +155,7 @@
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <url>
-                https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
     <licenses>

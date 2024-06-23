@@ -1,7 +1,5 @@
 package com.kxindot.goblin.compile;
 
-import com.kxindot.goblin.exception.RuntimeException;
-
 /**
  * @author zhaoqingjiang
  */
@@ -9,24 +7,19 @@ public class JavaDynamicCompileException extends RuntimeException {
 
     private static final long serialVersionUID = -8106787057402508785L;
 
-    public JavaDynamicCompileException(Throwable cause, String message, Object... args) {
-        super(cause, message, args);
-    }
+	protected JavaDynamicCompileException() {
+		super();
+	}
 
-    public JavaDynamicCompileException(Throwable cause, String message) {
-        super(cause, message);
-    }
+	protected JavaDynamicCompileException(String message, Throwable cause) {
+		super(message, cause);
+	}
 
-    public JavaDynamicCompileException(Throwable cause) {
-        super(cause);
-    }
+	protected JavaDynamicCompileException(String message) {
+		super(message);
+	}
 
-    public JavaDynamicCompileException(String message, Object... args) {
-        super(message, args);
-    }
-
-    public JavaDynamicCompileException(String message) {
-        super(message);
-    }
-
+	protected JavaDynamicCompileException(Throwable cause) {
+		super(cause);
+	}
 }

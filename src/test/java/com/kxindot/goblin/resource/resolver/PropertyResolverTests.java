@@ -15,7 +15,7 @@ import com.kxindot.goblin.resource.property.resolver.ListPropertyResolver;
 import com.kxindot.goblin.resource.property.resolver.MapPropertyResolver;
 import com.kxindot.goblin.resource.property.resolver.PrimitivePropertyResolver;
 import com.kxindot.goblin.resource.property.resolver.StringPropertyResolver;
-import com.kxindot.goblin.testkit.JunitTests;
+import com.kxindot.goblin.test.JunitTests;
 
 import lombok.Data;
 import lombok.Getter;

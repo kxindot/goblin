@@ -229,7 +229,7 @@ public interface JavaDynamicCompiler {
                 try {
                     manager.close();
                 } catch (IOException e) {
-                    throw new JavaDynamicCompileException(e, "Close JavaFileManager meet some problem");
+                    throw new JavaDynamicCompileException("Close JavaFileManager meet some problem", e);
                 }
             }
             Map<String, Class<?>> map = newHashMap();

@@ -5,13 +5,18 @@ import static com.kxindot.goblin.Classes.Path_Separator;
 import static com.kxindot.goblin.Classes.getAvailableClassLoader;
 import static com.kxindot.goblin.Classes.toPackagePattern;
 import static com.kxindot.goblin.Classes.toPathPattern;
+import static com.kxindot.goblin.Objects.Backslash;
 import static com.kxindot.goblin.Objects.Colon;
 import static com.kxindot.goblin.Objects.Dot;
 import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.Exclamation;
 import static com.kxindot.goblin.Objects.Hyphen;
+import static com.kxindot.goblin.Objects.Slash;
+import static com.kxindot.goblin.Objects.containsAny;
+import static com.kxindot.goblin.Objects.isEqual;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
+import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
@@ -34,11 +39,13 @@ import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -48,14 +55,12 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import com.kxindot.goblin.exception.RuntimeException;
 import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
 import com.kxindot.goblin.io.IOOutput;
 import com.kxindot.goblin.io.IOReader;
 import com.kxindot.goblin.io.IOWriter;
-import com.kxindot.goblin.io.file.Zip;
 
 /**
  * 
@@ -63,6 +68,21 @@ import com.kxindot.goblin.io.file.Zip;
  * @author ZhaoQingJiang
  */
 public class Resources {
+	
+	/**
+     * 文件分隔符
+     */
+    public static final String FILE_SEPERATOR = File.separator;
+    
+    /**
+     * Unix文件分隔符
+     */
+    public static final String UNIX_SEPERATOR = Slash;
+    
+    /**
+     * Windows文件分隔符
+     */
+    public static final String WINDOWS_SEPERATOR = Backslash;
     
     /**
      * jar包URL协议头: jar
@@ -171,8 +191,8 @@ public class Resources {
                 }
             }
         } catch (Exception e) {
-            throw new ResourceLoadException(e, 
-                    "Error occurred when loading resources from URL : %s", url);
+            throw new ResourceLoadException( 
+                    "Error occurred when loading resources from URL : " + url, e);
         }
         return (T) c;
     }
@@ -249,8 +269,8 @@ public class Resources {
             JarFile file = JarURLConnection.class.cast(url.openConnection()).getJarFile();
             return loadJarResources(url, file, loader);
         } catch (Exception e) {
-            throw new ResourceLoadException(e, 
-                    "Error occurred when loading resources from jar : %s", url);
+            throw new ResourceLoadException(
+                    "Error occurred when loading resources from jar : " + url, e);
         }
     }
     
@@ -447,19 +467,141 @@ public class Resources {
     }
     
     /**
-     * Parse and get a file simple name.<br>
-     * e.g: input "/Users/Jack/Documents/Test.txt", then output "Test".
-     * @param fileName String
-     * @return String
+     * 获取不带扩展名的文件名，例如：
+     * <pre>
+     * D:\\Documents\\Test.txt : Test
+     * /Users/Jack/Documents/Test.txt : Test
+     * </pre>
+     * 
+     * @param file 文件路径
+     * @return 不带扩展名的文件名
+     * @since 1.1.8
      */
-    public static String getSimpleFileName(String fileName) {
-        if (fileName.contains(File.separator)) {
-            fileName = fileName.substring(fileName.lastIndexOf(Path_Separator) + 1);
-        }
-        if (fileName.contains(Dot)) {
-            fileName = fileName.substring(0, fileName.lastIndexOf(Dot));
-        }
-        return fileName;
+    public static String getFileNameWithoutExt(Path file) {
+    	return isDirectory(file) ? file.getFileName().toString() 
+    			: isFile(file) ? getFileNameWithoutExt(file.getFileName().toString()) : null;
+    }
+    
+    /**
+     * 获取不带扩展名的文件名，例如：
+     * <pre>
+     * D:\\Documents\\Test.txt : Test
+     * /Users/Jack/Documents/Test.txt : Test
+     * </pre>
+     * 
+     * @param file 文件
+     * @return 不带扩展名的文件名
+     * @since 1.1.8
+     */
+    public static String getFileNameWithoutExt(File file) {
+    	return isDirectory(file) ? file.getName() 
+    			: isFile(file) ? getFileNameWithoutExt(file.getName()) : null;
+    }
+    
+    /**
+     * 获取不带扩展名的文件名，例如：
+     * <pre>
+     * Test.txt : Test
+     * D:\\Documents\\Test.txt : Test
+     * /Users/Jack/Documents/Test.txt : Test
+     * </pre>
+     * 
+     * @param fileName 文件名
+     * @return 不带扩展名的文件名
+     * @since 1.1.8
+     */
+    public static String getFileNameWithoutExt(String fileName) {
+    	if (isNull(fileName)) {
+			return null;
+		}
+    	int i = fileName.lastIndexOf(FILE_SEPERATOR);
+    	if (i != -1) {
+			fileName = fileName.substring(i + 1);
+		}
+    	i = fileName.lastIndexOf(Dot);
+        return i == -1 ? fileName : fileName.substring(0, i);
+    }
+    
+    /**
+     * 获取文件扩展名，例如：“.txt”。
+     * 
+     * @param file 文件路径
+     * @return 文件扩展名
+     * @since 1.1.8
+     */
+    public static String getFileExt(Path file) {
+    	return isFile(file) ? getFileExt(file.getFileName().toString()) : null;
+    }
+    
+    /**
+     * 获取文件扩展名，例如：“.txt”。
+     * 
+     * @param file 文件
+     * @return 文件扩展名
+     * @since 1.1.8
+     */
+    public static String getFileExt(File file) {
+    	return isFile(file) ? getFileExt(file.getName()) : null;
+    }
+    
+    /**
+     * 获取文件扩展名，例如：“.txt”。
+     * 
+     * @param fileName 文件名
+     * @return 文件扩展名
+     * @since 1.1.8
+     */
+    public static String getFileExt(String fileName) {
+    	if (isNull(fileName)) {
+			return null;
+		}
+    	int i = fileName.lastIndexOf(Dot);
+    	if (i == -1) {
+			return EMP;
+		}
+    	String ext = fileName.substring(i);
+    	return containsAny(ext, UNIX_SEPERATOR, WINDOWS_SEPERATOR) ? EMP : ext;
+    }
+    
+    /**
+     * 获取不带"."的文件扩展名，例如：“txt”。
+     * 
+     * @param file 文件路径
+     * @return 不带"."的文件扩展名
+     * @since 1.1.8
+     */
+    public static String getFileExtWithoutDot(Path file) {
+    	return isFile(file) ? getFileExt(file.getFileName().toString()) : null;
+    }
+    
+    /**
+     * 获取不带"."的文件扩展名，例如：“txt”。
+     * 
+     * @param file 文件
+     * @return 不带"."的文件扩展名
+     * @since 1.1.8
+     */
+    public static String getFileExtWithoutDot(File file) {
+    	return isFile(file) ? getFileExt(file.getName()) : null;
+    }
+    
+    /**
+     * 获取不带"."的文件扩展名，例如：“txt”。
+     * 
+     * @param file 文件
+     * @return 不带"."的文件扩展名
+     * @since 1.1.8
+     */
+    public static String getFileExtWithoutDot(String fileName) {
+    	if (isNull(fileName)) {
+			return null;
+		}
+    	int i = fileName.lastIndexOf(Dot);
+    	if (i == -1) {
+			return EMP;
+		}
+    	String ext = fileName.substring(i + 1);
+    	return containsAny(ext, UNIX_SEPERATOR, WINDOWS_SEPERATOR) ? EMP : ext;
     }
     
     public static List<File> listFile(File file) {
@@ -836,6 +978,89 @@ public class Resources {
     }
     
     /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则目标文件会被覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param path 文件或文件夹路径
+     * @param newName 新名称
+     * @return 重命名后的文件或文件夹路径
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
+     */
+    public static Path rename(Path path, String newName) {
+    	return rename(path, newName, true);
+    }
+
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则目标文件会被覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param file 文件或文件夹
+     * @param newName 新名称
+     * @return 重命名后的文件或文件夹
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
+     */
+    public static File rename(File file, String newName) {
+    	return rename(file, newName, true);
+    }
+    
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则会根据override值判定是否覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param path 文件或文件夹路径
+     * @param newName 新名称
+     * @param override 是否覆盖
+     * @return 重命名后的文件或文件夹路径
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
+     */
+    public static Path rename(Path path, String newName, boolean override) {
+    	requireNotBlank(newName, "file new name can't be null or blank");
+    	if (!isEqual(path.getFileName().toString(), newName)) {
+    		CopyOption[] options = override ? new CopyOption[] {StandardCopyOption.REPLACE_EXISTING} : new CopyOption[] {};
+    		try {
+    			path = Files.move(path, path.resolveSibling(newName), options);
+    		} catch (IOException e) {
+    			silentThrex(e, "rename file or directory failed: %s", e.getMessage());
+    		}
+    	}
+    	return path;
+    }
+    
+    /**
+     * 重命名文件或文件夹。
+     * <pre>
+     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
+     * 若重命名文件，且重命名后的文件已存在，则会根据override值判定是否覆盖；
+     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @param file 文件或文件夹
+     * @param newName 新名称
+     * @param override 是否覆盖
+     * @return 重命名后的文件或文件夹
+     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @since 1.1.8
+     */
+    public static File rename(File file, String newName, boolean override) {
+    	return rename(file.toPath(), newName, override).toFile();
+    }
+    
+    /**
      * 删除文件或文件夹.若不存在,不做任何操作;
      * 若存在且是文件夹,则会删除此文件夹及此文件夹下的所有文件和文件夹.
      * 
@@ -975,29 +1200,6 @@ public class Resources {
     }
     
     
-    /**************************************************文件压缩与解压缩**************************************************/
-    
-    /**
-     * 获取zip压缩对象.
-     * 
-     * @return Zip
-     */
-    public static Zip zip() {
-    	return new Zip();
-    }
-    
-    /**
-     * 获取zip压缩对象.
-     * 
-     * @param bufSize 缓冲区大小
-     * @return Zip
-     */
-    public static Zip zip(int bufSize) {
-    	return new Zip();
-    }
-    
-    
-    
     /**
      * @author zhaoqingjiang
      */
@@ -1111,17 +1313,17 @@ public class Resources {
 
         private static final long serialVersionUID = -2197349031983803955L;
 
-        public ResourceLoadException(Throwable cause, String message, Object... args) {
-            super(cause, message, args);
-        }
+		protected ResourceLoadException(String message, Throwable cause) {
+			super(message, cause);
+		}
 
-        public ResourceLoadException(Throwable cause, String message) {
-            super(cause, message);
-        }
+		protected ResourceLoadException(String message) {
+			super(message);
+		}
 
-        public ResourceLoadException(Throwable cause) {
-            super(cause);
-        }
+		protected ResourceLoadException(Throwable cause) {
+			super(cause);
+		}
     }
     
 }
