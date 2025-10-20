@@ -13,7 +13,6 @@ import static com.kxindot.goblin.Objects.Exclamation;
 import static com.kxindot.goblin.Objects.Hyphen;
 import static com.kxindot.goblin.Objects.Slash;
 import static com.kxindot.goblin.Objects.containsAny;
-import static com.kxindot.goblin.Objects.isEqual;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
@@ -28,6 +27,7 @@ import static java.io.File.separator;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -38,14 +38,14 @@ import java.io.Writer;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.CopyOption;
+import java.net.URLClassLoader;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -61,6 +61,7 @@ import com.kxindot.goblin.io.IOInput;
 import com.kxindot.goblin.io.IOOutput;
 import com.kxindot.goblin.io.IOReader;
 import com.kxindot.goblin.io.IOWriter;
+import com.kxindot.goblin.io.file.FileCopier;
 
 /**
  * 
@@ -464,6 +465,36 @@ public class Resources {
     
     public static boolean isJavaClassFile(Path path) {
         return isFile(path) && path.getFileName().toString().endsWith(CLASS.extension);
+    }
+    
+    /**
+     * 校验是否文件。若文件不存在或其不是文件则抛出{@link IllegalArgumentException}异常。
+     * 
+     * @param file Path
+     * @throws IllegalArgumentException 若文件不存在或其不是文件，则抛出此异常。
+     */
+    public static Path checkFile(Path file) {
+    	if (!exists(file)) {
+    		threx(IllegalArgumentException::new, "文件不存在：%s", file);
+		} else if (!isFile(file)) {
+			threx(IllegalArgumentException::new, "指定路径上不是文件：%s", file);
+		}
+    	return file;
+    }
+    
+    /**
+     * 校验是否目录。若目录不存在或其不是目录则抛出{@link IllegalArgumentException}异常。
+     * 
+     * @param directory Path
+     * @throws IllegalArgumentException 若目录不存在或其不是目录，则抛出此异常。
+     */
+    public static Path checkDirectory(Path directory) {
+    	if (!exists(directory)) {
+    		threx(IllegalArgumentException::new, "目录不存在：%s", directory);
+		} else if (!isDirectory(directory)) {
+    		threx(IllegalArgumentException::new, "指定路径上不是目录：%s", directory);
+		}
+    	return directory;
     }
     
     /**
@@ -978,86 +1009,518 @@ public class Resources {
     }
     
     /**
-     * 重命名文件或文件夹。
+     * 文件或目录复制。若出现相同文件则直接覆盖。
      * <pre>
-     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
-     * 若重命名文件，且重命名后的文件已存在，则目标文件会被覆盖；
-     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+	 * 若source与target都是文件，则直接复制，返回target；
+	 * 若source是文件，target是目录，则将source复制至target目录内，返回复制后的文件；
+	 * 若source与target都是目录，则将source目录整体复制到target目录内，返回复制后的目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录复制过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+     * 
+     * @see #copy(Path, Path, boolean)
+     * @see FileCopier#copy(boolean, boolean)
+     * @param source Path
+     * @param target Path
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path copy(Path source, Path target) {
+    	return copy(source, target, true);
+    }
+    
+    /**
+     * 文件或目录复制。
+     * <pre>
+     * 若source与target都是文件，则直接复制，返回target；
+     * 若source是文件，target是目录，则将source复制至target目录内，返回复制后的文件；
+     * 若source与target都是目录，则将source目录整体复制到target目录内，返回复制后的目录；
+     * </pre>
+     * 异常情况：
+     * <pre>
+     * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+     * 若override=false且目标位置文件已存在时抛出{@link IIOException}；
+     * 若source是目录且target是文件时抛出{@link IIOException}；
+     * 若source是目录且target也是目录，在目录复制过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
      * </pre>
      * 
-     * @param path 文件或文件夹路径
-     * @param newName 新名称
-     * @return 重命名后的文件或文件夹路径
-     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @see FileCopier#copy(boolean, boolean)
+     * @param source Path
+     * @param target Path
+     * @param override boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path copy(Path source, Path target, boolean override) {
+    	return new FileCopier(source, target).copy(false, override);
+    }
+    
+    /**
+     * 文件复制或目录内容复制。若出现相同文件则直接覆盖。
+     * <pre>
+	 * 若source与target都是文件，则直接复制，返回target；
+	 * 若source是文件，target是目录，则将source复制至target目录内，返回复制后的文件；
+	 * 若source与target都是目录，则将source目录内所有文件及目录复制到target目录内，返回target目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录复制过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+     * 
+     * @see #copyContent(Path, Path, boolean)
+     * @see FileCopier#copy(boolean, boolean)
+     * @param source Path
+     * @param target Path
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path copyContent(Path source, Path target) {
+    	return copyContent(source, target, true);
+    }
+    
+    /**
+     * 文件复制或目录内容复制。
+     * <pre>
+	 * 若source与target都是文件，则直接复制，返回target；
+	 * 若source是文件，target是目录，则将source复制至target目录内，返回复制后的文件；
+	 * 若source与target都是目录，则将source目录内所有文件及目录复制到target目录内，返回target目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若override=false且目标位置文件已存在时抛出{@link IIOException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录复制过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+     * 
+     * @see FileCopier#copy(boolean, boolean)
+     * @param source Path
+     * @param target Path
+     * @param override boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path copyContent(Path source, Path target, boolean override) {
+    	return new FileCopier(source, target).copy(true, override);
+    }
+    
+    /**
+	 * 移动文件或目录。若出现相同文件则直接覆盖。
+	 * <pre>
+	 * 若source与target都是文件，则直接移动，返回target；
+	 * 若source是文件，target是目录，则将source移动至target目录内，返回移动后的文件；
+	 * 若source与target都是目录，则将source目录整体移动到target目录内，返回移动后的目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录移动过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+	 * 
+	 * @see #move(Path, Path, boolean)
+	 * @see FileCopier#move(boolean, boolean)
+	 * @param source Path
+     * @param target Path
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static Path move(Path source, Path target) {
+    	return move(source, target, true);
+    }
+    
+    /**
+	 * 移动文件或目录。
+	 * <pre>
+	 * 若source与target都是文件，则直接移动，返回target；
+	 * 若source是文件，target是目录，则将source移动至target目录内，返回移动后的文件；
+	 * 若source与target都是目录，则将source目录整体移动到target目录内，返回移动后的目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若override=false且目标位置文件已存在时抛出{@link IIOException}；
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录移动过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+	 * 
+	 * @see FileCopier#move(boolean, boolean)
+	 * @param source Path
+     * @param target Path
+     * @param override boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static Path move(Path source, Path target, boolean override) {
+    	return new FileCopier(source, target).move(false, override);
+    }
+    
+    /**
+	 * 移动文件或目录内容。若出现相同文件则直接覆盖。
+	 * <pre>
+	 * 若source与target都是文件，则直接移动，返回target；
+	 * 若source是文件，target是目录，则将source移动至target目录内，返回移动后的文件；
+	 * 若source与target都是目录，则将source目录内所有文件及目录移动到target目录内，返回target目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录移动过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+	 * 
+	 * @see #moveContent(Path, Path, boolean)
+	 * @see FileCopier#move(boolean, boolean)
+	 * @param source Path
+     * @param target Path
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static Path moveContent(Path source, Path target) {
+    	return moveContent(source, target, true);
+    }
+    
+    /**
+	 * 移动文件或目录内容。
+	 * <pre>
+	 * 若source与target都是文件，则直接移动，返回target；
+	 * 若source是文件，target是目录，则将source移动至target目录内，返回移动后的文件；
+	 * 若source与target都是目录，则将source目录内所有文件及目录移动到target目录内，返回target目录；
+	 * </pre>
+	 * 异常情况：
+	 * <pre>
+	 * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+	 * 若override=false且目标位置文件已存在时抛出{@link IIOException}；
+	 * 若source是目录且target是文件时抛出{@link IIOException}；
+	 * 若source是目录且target也是目录，在目录移动过程中发现目标位置已存在相同名称的文件时抛出{@link IIOException}；
+	 * </pre>
+	 * 
+	 * @see FileCopier#move(boolean, boolean)
+	 * @param source Path
+     * @param target Path
+     * @param override boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static Path moveContent(Path source, Path target, boolean override) {
+    	return new FileCopier(source, target).move(true, override);
+    }
+    
+    
+    /**
+     * 文件或目录复制。API说明文档请查看{@link #copy(Path, Path)}。
+     * 
+     * @see #copy(Path, Path)
+     * @param source File
+     * @param target File
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static File copy(File source, File target) {
+    	return copy(source.toPath(), target.toPath()).toFile();
+    }
+    
+    /**
+     * 文件或目录复制。API说明文档请查看{@link #copy(Path, Path, boolean)}。
+     * 
+     * @see #copy(Path, Path, boolean)
+     * @param source Path
+     * @param target Path
+     * @param override boolean
+     * @return Path
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static File copy(File source, File target, boolean override) {
+    	return copy(source.toPath(), target.toPath(), override).toFile();
+    }
+    
+    /**
+     * 文件复制或目录内容复制。API说明文档请查看{@link #copyContent(Path, Path)}。
+     * 
+     * @see #copyContent(Path, Path)
+     * @param source File
+     * @param target File
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static File copyContent(File source, File target) {
+    	return copyContent(source.toPath(), target.toPath()).toFile();
+    }
+    
+    /**
+     * 文件复制或目录内容复制。API说明文档请查看{@link #copyContent(Path, Path, boolean)}。
+     * 
+     * @see #copyContent(Path, Path, boolean)
+     * @param source File
+     * @param target File
+     * @param override boolean
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 复制过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static File copyContent(File source, File target, boolean override) {
+    	return copyContent(source.toPath(), target.toPath(), override).toFile();
+    }
+    
+    /**
+	 * 移动文件或目录。API说明文档请查看{@link #move(Path, Path)}。
+	 * 
+	 * @see #move(Path, Path)
+	 * @see FileCopier#move(boolean, boolean)
+	 * @param source File
+     * @param target File
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static File move(File source, File target) {
+    	return move(source.toPath(), target.toPath()).toFile();
+    }
+    
+    /**
+	 * 移动文件或目录。API说明文档请查看{@link #move(Path, Path, boolean)}。
+	 * 
+	 * @see #move(Path, Path, boolean)
+	 * @param source File
+     * @param target File
+     * @param override boolean
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static File move(File source, File target, boolean override) {
+    	return move(source.toPath(), target.toPath(), override).toFile();
+    }
+    
+    /**
+	 * 移动文件或目录内容。API说明文档请查看{@link #moveContent(Path, Path)}。
+	 * 
+	 * @see #moveContent(Path, Path)
+	 * @param source File
+     * @param target File
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static File moveContent(File source, File target) {
+    	return moveContent(source.toPath(), target.toPath()).toFile();
+    }
+    
+    /**
+	 * 移动文件或目录内容。API说明文档请查看{@link #moveContent(Path, Path, boolean)}。
+	 * 
+	 * @see #moveContent(Path, Path, boolean)
+	 * @param source File
+     * @param target File
+     * @param override boolean
+     * @return File
+     * @throws NullPointerException source或target等于null时将抛出此异常
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+	 * @throws IIOException 移动过程中出现任何问题将抛出此异常
+	 * @since 1.1.9
+	 */
+    public static File moveContent(File source, File target, boolean override) {
+    	return moveContent(source.toPath(), target.toPath(), override).toFile();
+    }
+    
+    /**
+     * 重命名文件或目录，返回重命名后的文件或目录。
+     * <pre>
+     * 若path等于null或不存在，亦或newName等于null或空字符串则抛出{@link IllegalArgumentException}；
+     * 若重命名文件或目录已存在则抛出{@link IIOException}；
+     * </pre>
+     * 
+     * @see #rename(Path, String, boolean)
+     * @param path Path 
+     * @param newName String 
+     * @return Path 
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
      * @since 1.1.8
      */
     public static Path rename(Path path, String newName) {
-    	return rename(path, newName, true);
+    	return rename(path, newName, false);
     }
-
+    
     /**
-     * 重命名文件或文件夹。
+     * 重命名文件或目录，返回重命名后的文件或目录。
      * <pre>
-     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
-     * 若重命名文件，且重命名后的文件已存在，则目标文件会被覆盖；
-     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * 若path等于null或不存在，亦或newName等于null或空字符串则抛出{@link IllegalArgumentException}；
+     * 当deleteExisting等于false时，若重命名文件或目录已存在则抛出{@link IIOException}；
+	 * 当deleteExisting等于true，若重命名文件或目录已存在，则先将其删除再进行重命名；
      * </pre>
      * 
-     * @param file 文件或文件夹
-     * @param newName 新名称
-     * @return 重命名后的文件或文件夹
-     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @see FileCopier#rename(boolean)
+     * @param path Path 
+     * @param newName String 
+     * @param deleteExisting boolean 
+     * @return Path 
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
+     * @since 1.1.8
+     */
+    public static Path rename(Path path, String newName, boolean deleteExisting) {
+    	return new FileCopier(path, path.resolveSibling(newName)).rename(deleteExisting);
+    }
+    
+    /**
+     * 重命名文件或目录。API说明文档请查看{@link #rename(Path, String)}。
+     * 
+     * @see #rename(Path, String)
+     * @param file File 
+     * @param newName String 
+     * @return File 
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
      * @since 1.1.8
      */
     public static File rename(File file, String newName) {
-    	return rename(file, newName, true);
+    	return rename(file.toPath(), newName).toFile();
     }
     
     /**
-     * 重命名文件或文件夹。
-     * <pre>
-     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
-     * 若重命名文件，且重命名后的文件已存在，则会根据override值判定是否覆盖；
-     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
-     * </pre>
+     * 重命名文件或目录。API说明文档请查看{@link #rename(Path, String, boolean)}。
      * 
-     * @param path 文件或文件夹路径
-     * @param newName 新名称
-     * @param override 是否覆盖
-     * @return 重命名后的文件或文件夹路径
-     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
+     * @see #rename(Path, String, boolean)
+     * @param file File 
+     * @param newName String 
+     * @param deleteExisting boolean 
+     * @return File 
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
      * @since 1.1.8
      */
-    public static Path rename(Path path, String newName, boolean override) {
-    	requireNotBlank(newName, "file new name can't be null or blank");
-    	if (!isEqual(path.getFileName().toString(), newName)) {
-    		CopyOption[] options = override ? new CopyOption[] {StandardCopyOption.REPLACE_EXISTING} : new CopyOption[] {};
-    		try {
-    			path = Files.move(path, path.resolveSibling(newName), options);
-    		} catch (IOException e) {
-    			silentThrex(e, "rename file or directory failed: %s", e.getMessage());
-    		}
-    	}
-    	return path;
+    public static File rename(File file, String newName, boolean deleteExisting) {
+    	return rename(file.toPath(), newName, deleteExisting).toFile();
     }
     
     /**
-     * 重命名文件或文件夹。
+     * 将文件或目录移动至指定目录下重命名，返回重命名后的文件或目录。
      * <pre>
-     * 若指定文件或文件夹不存在，则会抛出{@link IIOException}；
-     * 若重命名文件，且重命名后的文件已存在，则会根据override值判定是否覆盖；
-     * 若重命名文件夹，且重命名后的文件夹已存在且不是空文件夹，则会抛出{@link IIOException}；
+     * 若source等于null或不存在，或directory等于null，亦或newName等于null或空字符串则抛出{@link IllegalArgumentException}；
+     * 若重命名文件或目录已存在则抛出{@link IIOException}；
+     * </pre>
+     * 例如：
+     * <pre>
+     * rename(/root/sourcePath, /root/data, "sourceNewName") -> /root/data/sourceNewName 
      * </pre>
      * 
-     * @param file 文件或文件夹
-     * @param newName 新名称
-     * @param override 是否覆盖
-     * @return 重命名后的文件或文件夹
-     * @throws IIOException 若重命名过程中出现错误，则抛出此异常
-     * @since 1.1.8
+     * @see FileCopier#rename(boolean)
+     * @param source Path
+     * @param directory Path
+     * @param newName String
+     * @param deleteExisting boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
+     * @since 1.1.9
      */
-    public static File rename(File file, String newName, boolean override) {
-    	return rename(file.toPath(), newName, override).toFile();
+    public static Path rename(Path source, Path directory, String newName) {
+    	return rename(source, directory, newName, false);
+    }
+    
+    /**
+     * 将文件或目录移动至指定目录下重命名，返回重命名后的文件或目录。
+     * <pre>
+     * 若source等于null或不存在，或directory等于null，亦或newName等于null或空字符串则抛出{@link IllegalArgumentException}；
+     * 当deleteExisting等于false时，若重命名文件或目录已存在则抛出{@link IIOException}；
+	 * 当deleteExisting等于true，若重命名文件或目录已存在，则先将其删除再进行重命名；
+     * </pre>
+     * 例如：
+     * <pre>
+     * rename(/root/sourcePath, /root/data, "sourceNewName"...) -> /root/data/sourceNewName 
+     * </pre>
+     * 
+     * @see FileCopier#rename(boolean)
+     * @param source Path
+     * @param directory Path
+     * @param newName String
+     * @param deleteExisting boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path rename(Path source, Path directory, String newName, boolean deleteExisting) {
+    	Path target = requireNotNull(directory, "directory不能等于null").resolve(requireNotBlank(newName, "新文件名不能等于null或空字符串"));
+    	return new FileCopier(source, target).rename(deleteExisting);
+    }
+    
+    /**
+     * 重命名文件或目录。
+     * <pre>
+     * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+     * </pre>
+     * 
+     * @param source Path
+     * @param target Path
+     * @param deleteExisting boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path rename(Path source, Path target) {
+    	return rename(source, target, false);
+    }
+    
+    /**
+     * 重命名文件或目录。
+     * <pre>
+     * 若source或target任意一个对象等于null，或者source不存在时抛出{@link IllegalArgumentException}；
+     * 当deleteExisting等于false时，若target已存在则抛出{@link IIOException}；
+	 * 当deleteExisting等于true，若target已存在，则先将其删除再进行重命名；
+     * </pre>
+     * 
+     * @param source Path
+     * @param target Path
+     * @param deleteExisting boolean
+     * @return Path
+     * @throws IllegalArgumentException 参数不合法时将抛出此异常
+     * @throws IIOException 重命名过程中出现任何问题将抛出此异常
+     * @since 1.1.9
+     */
+    public static Path rename(Path source, Path target, boolean deleteExisting) {
+    	return new FileCopier(source, target).rename(deleteExisting);
     }
     
     /**
@@ -1125,6 +1588,40 @@ public class Resources {
         	threx(IIOException::new, e);
         }
     }
+    
+    /**
+     * 尝试将{@link URL}对象转换为{@link Path}对象。
+     * 若{@link URL}对象不符合{@link URI}标准，则抛出异常。
+     * 
+     * @param url URL
+     * @return Path
+     */
+    public static Path toPath(URL url) {
+    	Path path = null;
+    	try {
+			path = Paths.get(url.toURI());
+		} catch (URISyntaxException e) {
+			silentThrex(e);
+		}
+    	return path;
+    }
+    
+    /**
+     * 尝试将{@link Path}对象转换为{@link URL}对象。
+     * 若{@link Path}对象不符合{@link URL}标准，则抛出异常。
+     * 
+	 * @param path Path
+	 * @return URL
+	 */
+	public static URL toURL(Path path) {
+		URL url = null;
+		try {
+			url = path.toUri().toURL();
+		} catch (MalformedURLException e) {
+			silentThrex(e);
+		}
+		return url;
+	}
     
     
     /**************************************************IO**************************************************/
@@ -1197,6 +1694,21 @@ public class Resources {
     
     public static void writeAndClose(OutputStream out, CharSequence content) {
     	load(out).write(content).close();
+    }
+    
+    
+    /**************************************************ClassLoader**************************************************/
+    
+    /**
+     * 尝试关闭{@link ClassLoader}。
+	 * 若指定classLoader是{@link URLClassLoader}类型，则调用{@link URLClassLoader#close}方法，否则不做任何操作。
+     * 
+     * @param classLoader ClassLoader
+     */
+    public static void closeClassLoader(ClassLoader classLoader) {
+    	if (classLoader instanceof Closeable) {
+			IO.close(Closeable.class.cast(classLoader));
+		}
     }
     
     
