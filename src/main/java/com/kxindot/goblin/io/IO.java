@@ -26,7 +26,6 @@ import org.apache.commons.io.output.FileWriterWithEncoding;
 
 /**
  * IO便捷工具。
- * TODO 从BIO实现替换为NIO实现
  * 
  * @author ZhaoQingJiang
  */
@@ -200,7 +199,7 @@ public interface IO {
 	public static Writer openWriter(File file, Charset charset) {
 		Writer writer = null;
 		try {
-			writer = new FileWriterWithEncoding(file, charset);
+			writer = FileWriterWithEncoding.builder().setFile(file).setCharset(charset).get();
 		} catch (IOException e) {
 			silentThrex(e);
 		}
