@@ -36,7 +36,10 @@ import com.kxindot.goblin.logger.LoggerFactory;
 import com.kxindot.goblin.method.MethodReference;
 
 /**
+ * 文件监听。
+ * 
  * @author ZhaoQingJiang
+ * @since 1.1.9
  */
 public class FileWatcher {
 
