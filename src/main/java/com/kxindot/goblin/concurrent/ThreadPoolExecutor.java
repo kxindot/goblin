@@ -35,7 +35,7 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 	private ThreadFactory factory;
 	private ExecutorService executor;
 	private ThreadPoolConfiguration configuration;
-	private ThreadLocal<List<Runnable>> runnables = ThreadLocal.withInitial(ArrayList::new);
+	private ThreadLocal<List<CompleteRunner>> runnables = ThreadLocal.withInitial(ArrayList::new);
 
 	ThreadPoolExecutor() {
 		this.wrapped = false;
@@ -127,7 +127,7 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 	@Override
 	public void commit(Runnable task) {
 		requireNotNull(task, "task == null");
-		runnables.get().add(task);
+		runnables.get().add(new CompleteRunner(task));
 	}
 
 	@Override
@@ -148,7 +148,7 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 	@Override
 	@SuppressWarnings("rawtypes")
 	public void complete(int timeout, TimeUnit unit) {
-		List<Runnable> list = runnables.get();
+		List<CompleteRunner> list = runnables.get();
 		if (isEmpty(list)) {
 			return;
 		}
@@ -166,6 +166,7 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 		} catch (TimeoutException e) {
 			if (!future.isDone()) {
 				future.cancel(true);
+				list.forEach(r -> r.canceled = true);
 				silentThrex(e, "running tasks timeout");
 			}
 		} catch (ExecutionException e) {
@@ -196,6 +197,33 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 	        .append(", keepAlive=").append(configuration.getKeepAlive()).append(", queueSize=").append(configuration.getQueueSize());
 		}
 		return builder.append("]").toString();
+	}
+	
+	
+	/**
+	 * {@link Runnable}接口包装，内置canceled标志位，
+	 * 在批量任务执行排队时，若canceled标志位被设置为true，
+	 * 则后续执行的任务将放弃执行任务，直接退出。
+	 * 
+	 * @author ZhaoQingJiang
+	 */
+	class CompleteRunner implements Runnable {
+		
+		Runnable runnable;
+		volatile boolean canceled = false;
+		
+		CompleteRunner(Runnable runnable) {
+			this.runnable = runnable;
+		}
+
+		@Override
+		public void run() {
+			if (canceled) {
+				return;
+			}
+			runnable.run();
+		}
+		
 	}
 
 }
