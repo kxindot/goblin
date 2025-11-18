@@ -1,11 +1,10 @@
 package com.kxindot.goblin.concurrent;
 
-import static com.kxindot.goblin.Objects.isEmpty;
 import static com.kxindot.goblin.Objects.isNotNull;
 import static com.kxindot.goblin.Objects.isNull;
-import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.unmodifiableEmptyList;
-import static com.kxindot.goblin.Throws.silentThrex;
+import static com.kxindot.goblin.concurrent.Completables.State.EXCEPTION;
+import static com.kxindot.goblin.concurrent.Completables.State.TIMEOUT;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,22 +19,23 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.kxindot.goblin.Throws;
-import com.kxindot.goblin.Throws.WrapperException;
-import com.kxindot.goblin.method.MethodReference.MethodInvocationException;
+import com.kxindot.goblin.Objects;
+import com.kxindot.goblin.logger.Logger;
+import com.kxindot.goblin.logger.LoggerFactory;
 
 /**
- * 异步线程池.
+ * 异步线程池。
  * 
  * @author ZhaoQingJiang
  */
 class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecutor {
 
+	private Logger logger = LoggerFactory.getLogger(getClass());
 	private boolean wrapped = true;
 	private ThreadFactory factory;
 	private ExecutorService executor;
 	private ThreadPoolConfiguration configuration;
-	private ThreadLocal<List<CompleteRunner>> runnables = ThreadLocal.withInitial(ArrayList::new);
+	private ThreadLocal<List<Completable>> runnables = ThreadLocal.withInitial(ArrayList::new);
 
 	ThreadPoolExecutor() {
 		this.wrapped = false;
@@ -125,36 +125,49 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 	}
 
 	@Override
-	public void commit(Runnable task) {
-		requireNotNull(task, "task == null");
-		runnables.get().add(new CompleteRunner(task));
+	public void commit(String taskId, Runnable task) {
+		commit(new Completable(taskId, task));
+	}
+	
+	@Override
+	public void commit(Completable task) {
+		task.getId();
+		runnables.get().add(task);
+	}
+	
+	@Override
+	public void commit(Completable... tasks) {
+		Arrays.stream(tasks).filter(Objects::isNotNull).forEach(this::commit);
+	}
+	
+	@Override
+	public void commit(Collection<Completable> tasks) {
+		tasks.stream().filter(Objects::isNotNull).forEach(this::commit);
 	}
 
 	@Override
-	public void commit(Runnable... tasks) {
-		Arrays.stream(tasks).forEach(this::commit);
+	public Completables complete(boolean cancelWhenException) {
+		return complete(cancelWhenException, -1, null);
 	}
-
-	@Override
-	public void commit(Collection<? extends Runnable> tasks) {
-		tasks.forEach(this::commit);
-	}
-
-	@Override
-	public void complete() {
-		complete(-1, null);
-	}
-
+	
 	@Override
 	@SuppressWarnings("rawtypes")
-	public void complete(int timeout, TimeUnit unit) {
-		List<CompleteRunner> list = runnables.get();
-		if (isEmpty(list)) {
-			return;
+	public Completables complete(boolean cancelWhenException, long timeout, TimeUnit unit) {
+		Completables completables = new Completables(runnables.get());
+		int size = completables.size();
+		if (size < 1) {
+			logger.info("无任务提交，执行退出！");
+			return completables;
 		}
-		CompletableFuture[] futures = new CompletableFuture[list.size()];
-		for (int i = 0; i < list.size(); i++) {
-			futures[i] = CompletableFuture.runAsync(list.get(i), wrapped ? executor : this);
+		CompletableErrorInterruptListener listener = null;
+		if (cancelWhenException) {
+			listener = new CompletableErrorInterruptListener();
+		}
+		CompletableFuture[] futures = new CompletableFuture[size];
+		for (int i = 0; i < size; i++) {
+			Completable completable = completables.get(i);
+			completable.addListener(listener);
+			futures[i] = CompletableFuture.runAsync(completable, this);
 		}
 		CompletableFuture<Void> future = CompletableFuture.allOf(futures);
 		try {
@@ -163,27 +176,65 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 			} else {
 				future.get(timeout, unit);
 			}
-		} catch (TimeoutException e) {
-			if (!future.isDone()) {
-				future.cancel(true);
-				list.forEach(r -> r.canceled = true);
-				silentThrex(e, "running tasks timeout");
-			}
+			return completables;
 		} catch (ExecutionException e) {
-			Throwable cause = e.getCause();
-			if (Throws.isWrapperException(e)) {
-				throw WrapperException.class.cast(cause);
-			} else if (MethodInvocationException.class.isInstance(cause)) {
-				cause = MethodInvocationException.class.cast(cause).getCause();
+			cancel(completables, futures, -1);
+			if (e.getCause() instanceof CompletableIllegalStateException) {
+				throw CompletableIllegalStateException.class.cast(e);
 			}
-			silentThrex(cause);
-		} catch (InterruptedException e) {
-			silentThrex(e, "running tasks has been interrupted");
+			completables.setState(EXCEPTION);
+			return completables;
+		} catch (TimeoutException e) {
+			completables.setState(TIMEOUT);
+			cancel(completables, futures, unit.toNanos(timeout));
+			return completables;
+		}  catch (InterruptedException e) {
+			cancel(completables, futures, -1);
+			if (cancelWhenException && listener.intrrupted) {
+				Thread.interrupted();
+				completables.setState(EXCEPTION);
+				return completables;
+			}
+			throw new CompletableExecuteException("任务集执行被异常关闭", e);
 		} finally {
 			runnables.remove();
+			remove(completables, listener);
 		}
 	}
-
+	
+	/**
+	 * 取消未执行或执行中的{@link Completable}任务。
+	 * 
+	 * @param completables Completables
+	 * @param futures CompletableFuture[]
+	 * @param timeout long
+	 */
+	@SuppressWarnings("rawtypes")
+	private void cancel(Completables completables, CompletableFuture[] futures, long timeout) {
+		for (int i = 0; i < completables.size(); i++) {
+			CompletableFuture taskFuture = futures[i];
+			if (!taskFuture.isDone()) {
+				completables.get(i).cancel(timeout);
+			}
+		}
+	}
+	
+	/**
+	 * 删除异常中断监听器。
+	 * 
+	 * @param completables Completables
+	 * @param listener CompletableErrorInterruptListener
+	 */
+	private void remove(Completables completables, CompletableErrorInterruptListener listener) {
+		if (isNull(listener)) {
+			return;
+		}
+		for (int i = 0; i < completables.size(); i++) {
+			completables.get(i).removeListener(listener);
+		}
+		listener.thread = null;
+	}
+	
 	@Override
 	public String toString() {
 		if (isNull(factory)) {
@@ -201,27 +252,22 @@ class ThreadPoolExecutor extends AbstractExecutorService implements ThreadExecut
 	
 	
 	/**
-	 * {@link Runnable}接口包装，内置canceled标志位，
-	 * 在批量任务执行排队时，若canceled标志位被设置为true，
-	 * 则后续执行的任务将放弃执行任务，直接退出。
+	 * 任务异常中断监听器。
 	 * 
 	 * @author ZhaoQingJiang
 	 */
-	class CompleteRunner implements Runnable {
+	class CompletableErrorInterruptListener implements CompletableListener {
 		
-		Runnable runnable;
-		volatile boolean canceled = false;
+		boolean intrrupted;
+		Thread thread =  Thread.currentThread();
 		
-		CompleteRunner(Runnable runnable) {
-			this.runnable = runnable;
-		}
-
 		@Override
-		public void run() {
-			if (canceled) {
-				return;
+		public void onError(Completable completable, Throwable error) {
+			if (thread != null 
+					&& !thread.isInterrupted()) {
+				intrrupted = true;
+				thread.interrupt();
 			}
-			runnable.run();
 		}
 		
 	}

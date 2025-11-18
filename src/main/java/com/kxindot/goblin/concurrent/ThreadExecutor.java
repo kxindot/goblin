@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutorService;
  * 
  * @author ZhaoQingJiang
  */
-public interface ThreadExecutor extends ExecutorService, ThreadCompletableExecutor {
+public interface ThreadExecutor extends ExecutorService, CompletableExecutorService {
 	
 	
 	

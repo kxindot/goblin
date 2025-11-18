@@ -94,7 +94,7 @@ public class Threads {
     
     /**
      * 提交任务至默认异步执行同步完成线程池,
-     * 可调用{@link ThreadCompletableExecutor#complete()}或{@link ThreadCompletableExecutor#complete(int, TimeUnit)}
+     * 可调用{@link CompletableExecutorService#complete(boolean)}或{@link CompletableExecutorService#complete(boolean, int, TimeUnit)}
      * 方法运行提交的所有任务: 
 	 * <pre>
 	 * 获取默认异步执行同步完成线程池 : {@link Threads#getDefaulThreadExecutor()}
@@ -103,20 +103,20 @@ public class Threads {
 	 * 设置默认异步执行同步完成线程池 : {@link Threads#setDefaultThreadExecutor(ThreadPoolConfiguration)}
 	 * </pre>
      * 
-     * @see ThreadCompletableExecutor#commit(Runnable)
-     * @see ThreadCompletableExecutor#complete()
-     * @see ThreadCompletableExecutor#complete(int, TimeUnit)
+     * @see CompletableExecutorService#commit(Completable)
+     * @see CompletableExecutorService#complete(boolean)
+     * @see CompletableExecutorService#complete(boolean, int, TimeUnit)
      * @param runnable Runnable
-     * @return {@link ThreadCompletableExecutor}
+     * @return {@link CompletableExecutorService}
      */
-    public static ThreadCompletableExecutor commit(Runnable runnable) {
-    	executor.commit(runnable);
+    public static CompletableExecutorService commit(String id, Runnable runnable) {
+    	executor.commit(id, runnable);
     	return executor;
     }
     
     /**
      * 提交任务至默认异步执行同步完成线程池,
-     * 可调用{@link ThreadCompletableExecutor#complete()}或{@link ThreadCompletableExecutor#complete(int, TimeUnit)}
+     * 可调用{@link CompletableExecutorService#complete(boolean)}或{@link CompletableExecutorService#complete(boolean, int, TimeUnit)}
      * 方法运行提交的所有任务:  
 	 * <pre>
 	 * 获取默认异步执行同步完成线程池 : {@link Threads#getDefaulThreadExecutor()}
@@ -125,20 +125,20 @@ public class Threads {
 	 * 设置默认异步执行同步完成线程池 : {@link Threads#setDefaultThreadExecutor(ThreadPoolConfiguration)}
 	 * </pre>
      * 
-     * @see ThreadCompletableExecutor#commit(Runnable...)
-     * @see ThreadCompletableExecutor#complete()
-     * @see ThreadCompletableExecutor#complete(int, TimeUnit)
-     * @param runnables Runnable[]
-     * @return {@link ThreadCompletableExecutor}
+     * @see CompletableExecutorService#commit(Completable)
+     * @see CompletableExecutorService#complete(boolean)
+     * @see CompletableExecutorService#complete(boolean, int, TimeUnit)
+     * @param completable Completable
+     * @return {@link CompletableExecutorService}
      */
-    public static ThreadCompletableExecutor commit(Runnable... runnables) {
-    	executor.commit(runnables);
+    public static CompletableExecutorService commit(Completable completable) {
+    	executor.commit(completable);
     	return executor;
     }
     
     /**
      * 提交任务至默认异步执行同步完成线程池,
-     * 可调用{@link ThreadCompletableExecutor#complete()}或{@link ThreadCompletableExecutor#complete(int, TimeUnit)}
+     * 可调用{@link CompletableExecutorService#complete(boolean)}或{@link CompletableExecutorService#complete(boolean, int, TimeUnit)}
      * 方法运行提交的所有任务:  
 	 * <pre>
 	 * 获取默认异步执行同步完成线程池 : {@link Threads#getDefaulThreadExecutor()}
@@ -147,14 +147,34 @@ public class Threads {
 	 * 设置默认异步执行同步完成线程池 : {@link Threads#setDefaultThreadExecutor(ThreadPoolConfiguration)}
 	 * </pre>
      * 
-     * @see ThreadCompletableExecutor#commit(Collection)
-     * @see ThreadCompletableExecutor#complete()
-     * @see ThreadCompletableExecutor#complete(int, TimeUnit)
-     * @param runnables {@code Collection<? extends Runnable>}
-     * @return {@link ThreadCompletableExecutor}
+     * @see CompletableExecutorService#commit(Completable...)
+     * @see CompletableExecutorService#complete(boolean)
+     * @see CompletableExecutorService#complete(boolean, int, TimeUnit)
+     * @return {@link CompletableExecutorService}
      */
-    public static ThreadCompletableExecutor commit(Collection<? extends Runnable> runnables) {
-    	executor.commit(runnables);
+    public static CompletableExecutorService commit(Completable... completables) {
+    	executor.commit(completables);
+    	return executor;
+    }
+    
+    /**
+     * 提交任务至默认异步执行同步完成线程池,
+     * 可调用{@link CompletableExecutorService#complete(boolean)}或{@link CompletableExecutorService#complete(boolean, int, TimeUnit)}
+     * 方法运行提交的所有任务:  
+     * <pre>
+     * 获取默认异步执行同步完成线程池 : {@link Threads#getDefaulThreadExecutor()}
+     * 设置默认异步执行同步完成线程池 : {@link Threads#setDefaultThreadExecutor(ThreadExecutor)}
+     * 设置默认异步执行同步完成线程池 : {@link Threads#setDefaultThreadExecutor(ExecutorService)}
+     * 设置默认异步执行同步完成线程池 : {@link Threads#setDefaultThreadExecutor(ThreadPoolConfiguration)}
+     * </pre>
+     * 
+     * @see CompletableExecutorService#commit(Collection)
+     * @see CompletableExecutorService#complete(boolean)
+     * @see CompletableExecutorService#complete(boolean, int, TimeUnit)
+     * @return {@link CompletableExecutorService}
+     */
+    public static CompletableExecutorService commit(Collection<Completable> completables) {
+    	executor.commit(completables);
     	return executor;
     }
     
