@@ -285,19 +285,21 @@ public final class Throws {
     }
     
     /**
-     * 判断入参异常是否是{@link WrapperException}或其子类.若入参为null,则默认返回false.
+     * 判断入参异常是否是{@link WrapperException}或{@link IIOException}.若入参为null,则默认返回false.
      * 
      * @param throwable Throwable
      * @return boolean
      * @see WrapperException
      */
     public static boolean isWrapperException(Throwable throwable) {
-        return isNull(throwable) ? false : WrapperException.class.isInstance(throwable);
+        return isNull(throwable) ? false 
+        		: WrapperException.class.isInstance(throwable) ? true 
+        				: IIOException.class.isInstance(throwable);
     }
     
     /**
-     * 获取由{@link WrapperException}包装的起因(cause)异常.
-     * 若入参异常不是{@link WrapperException}或其子类,则返回入参本身;
+     * 获取由{@link WrapperException}或{@link IIOException}包装的起因(cause)异常.
+     * 若入参异常不是{@link WrapperException}或{@link IIOException},则返回入参本身;
      * 否则,返回被包装的起因(cause)异常.
      * 
      * @param throwable Throwable
