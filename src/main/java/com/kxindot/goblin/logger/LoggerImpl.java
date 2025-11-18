@@ -13,11 +13,17 @@ import static com.kxindot.goblin.logger.Level.ERROR;
 import static com.kxindot.goblin.logger.Level.INFO;
 import static com.kxindot.goblin.logger.Level.TRACE;
 import static com.kxindot.goblin.logger.Level.WARN;
+import static org.slf4j.spi.LocationAwareLogger.DEBUG_INT;
+import static org.slf4j.spi.LocationAwareLogger.ERROR_INT;
+import static org.slf4j.spi.LocationAwareLogger.INFO_INT;
+import static org.slf4j.spi.LocationAwareLogger.TRACE_INT;
+import static org.slf4j.spi.LocationAwareLogger.WARN_INT;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.slf4j.helpers.NOPLogger;
+import org.slf4j.spi.LocationAwareLogger;
 
 import com.kxindot.goblin.Objects;
 
@@ -32,9 +38,11 @@ class LoggerImpl implements Logger {
     private static final String Specifier = "%s";
     private static final String Pattern = "%s [%s] %s [%s] => %s";
     private static final DateTimeFormatter Timer = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS");
+    private static final String LOCATION = LoggerImpl.class.getName();
     private final String name;
     private final org.slf4j.Logger logger;
     private boolean loggerEnable = true;
+    private boolean loggerLocateEnable = false;
     private Level level;
     private boolean enablePattern;
     
@@ -53,7 +61,9 @@ class LoggerImpl implements Logger {
     protected LoggerImpl(org.slf4j.Logger logger, String name, boolean enablePattern) {
     	if (logger == null || logger instanceof NOPLogger) {
     		this.loggerEnable = false;
-    	}
+    	} else if (logger instanceof LocationAwareLogger) {
+			this.loggerLocateEnable = true;
+		}
     	this.logger = logger;
     	this.name = requireNotBlank(name, "name不能为空!");
     	this.enablePattern = enablePattern;
@@ -76,7 +86,7 @@ class LoggerImpl implements Logger {
     @Override
     public void trace(String msg) {
         if (loggerEnable) {
-            logger.trace(msg);
+            log(TRACE_INT, msg, null);
         } else {
             log(TRACE, msg);
         }
@@ -85,7 +95,7 @@ class LoggerImpl implements Logger {
     @Override
     public void trace(String format, Object arg) {
         if (loggerEnable) {
-            logger.trace(format, arg);
+            log(TRACE_INT, format, null, arg);
         } else {
             log(TRACE, format, arg);
         }
@@ -94,7 +104,7 @@ class LoggerImpl implements Logger {
     @Override
     public void trace(String format, Object arg1, Object arg2) {
         if (loggerEnable) {
-            logger.trace(format, arg1, arg2);
+            log(TRACE_INT, format, null, arg1, arg2);
         } else {
             log(TRACE, format, arg1, arg2);
         }
@@ -103,7 +113,7 @@ class LoggerImpl implements Logger {
     @Override
     public void trace(String format, Object... arguments) {
         if (loggerEnable) {
-            logger.trace(format, arguments);
+            log(TRACE_INT, format, null, arguments);
         } else {
             log(TRACE, format, arguments);
         }
@@ -112,7 +122,7 @@ class LoggerImpl implements Logger {
     @Override
     public void trace(String msg, Throwable t) {
         if (loggerEnable) {
-            logger.trace(msg, t);
+            log(TRACE_INT, msg, t);
         } else {
             log(TRACE, msg, t);
         }
@@ -126,7 +136,7 @@ class LoggerImpl implements Logger {
     @Override
     public void debug(String msg) {
         if (loggerEnable) {
-            logger.debug(msg);
+            log(DEBUG_INT, msg, null);
         } else {
             log(DEBUG, msg);
         }
@@ -135,7 +145,7 @@ class LoggerImpl implements Logger {
     @Override
     public void debug(String format, Object arg) {
         if (loggerEnable) {
-            logger.debug(format, arg);
+            log(DEBUG_INT, format, null, arg);
         } else {
             log(DEBUG, format, arg);
         }
@@ -144,7 +154,7 @@ class LoggerImpl implements Logger {
     @Override
     public void debug(String format, Object arg1, Object arg2) {
         if (loggerEnable) {
-            logger.debug(format, arg1, arg2);
+            log(DEBUG_INT, format, null, arg1, arg2);
         } else {
             log(DEBUG, format, arg1, arg2);
         }
@@ -153,7 +163,7 @@ class LoggerImpl implements Logger {
     @Override
     public void debug(String format, Object... arguments) {
         if (loggerEnable) {
-            logger.debug(format, arguments);
+            log(DEBUG_INT, format, null, arguments);
         } else {
             log(DEBUG, format, arguments);
         }
@@ -162,7 +172,7 @@ class LoggerImpl implements Logger {
     @Override
     public void debug(String msg, Throwable t) {
         if (loggerEnable) {
-            logger.debug(msg, t);
+            log(DEBUG_INT, msg, t);
         } else {
             log(DEBUG, msg, t);
         }
@@ -176,7 +186,7 @@ class LoggerImpl implements Logger {
     @Override
     public void info(String msg) {
         if (loggerEnable) {
-            logger.info(msg);
+            log(INFO_INT, msg, null);
         } else {
             log(INFO, msg);
         }
@@ -185,7 +195,7 @@ class LoggerImpl implements Logger {
     @Override
     public void info(String format, Object arg) {
         if (loggerEnable) {
-            logger.info(format, arg);
+            log(INFO_INT, format, null, arg);
         } else {
             log(INFO, format, arg);
         }
@@ -194,7 +204,7 @@ class LoggerImpl implements Logger {
     @Override
     public void info(String format, Object arg1, Object arg2) {
         if (loggerEnable) {
-            logger.info(format, arg1, arg2);
+            log(INFO_INT, format, null, arg1, arg2);
         } else {
             log(INFO, format, arg1, arg2);
         }
@@ -203,7 +213,7 @@ class LoggerImpl implements Logger {
     @Override
     public void info(String format, Object... arguments) {
         if (loggerEnable) {
-            logger.info(format, arguments);
+            log(INFO_INT, format, null, arguments);
         } else {
             log(INFO, format, arguments);
         }
@@ -212,7 +222,7 @@ class LoggerImpl implements Logger {
     @Override
     public void info(String msg, Throwable t) {
         if (loggerEnable) {
-            logger.info(msg, t);
+            log(INFO_INT, msg, t);
         } else {
             log(INFO, msg, t);
         }
@@ -226,7 +236,7 @@ class LoggerImpl implements Logger {
     @Override
     public void warn(String msg) {
         if (loggerEnable) {
-            logger.warn(msg);
+            log(WARN_INT, msg, null);
         } else {
             log(WARN, msg);
         }
@@ -235,7 +245,7 @@ class LoggerImpl implements Logger {
     @Override
     public void warn(String format, Object arg) {
         if (loggerEnable) {
-            logger.warn(format, arg);
+            log(WARN_INT, format, null, arg);
         } else {
             log(WARN, format, arg);
         }
@@ -244,7 +254,7 @@ class LoggerImpl implements Logger {
     @Override
     public void warn(String format, Object... arguments) {
         if (loggerEnable) {
-            logger.warn(format, arguments);
+            log(WARN_INT, format, null, arguments);
         } else {
             log(WARN, format, arguments);
         }
@@ -253,7 +263,7 @@ class LoggerImpl implements Logger {
     @Override
     public void warn(String format, Object arg1, Object arg2) {
         if (loggerEnable) {
-            logger.warn(format, arg1, arg2);
+            log(WARN_INT, format, null, arg1, arg2);
         } else {
             log(WARN, format, arg1, arg2);
         }
@@ -262,7 +272,7 @@ class LoggerImpl implements Logger {
     @Override
     public void warn(String msg, Throwable t) {
         if (loggerEnable) {
-            logger.warn(msg, t);
+            log(WARN_INT, msg, t);
         } else {
             log(WARN, msg, t);
         }
@@ -277,7 +287,7 @@ class LoggerImpl implements Logger {
     @Override
     public void error(String msg) {
         if (loggerEnable) {
-            logger.error(msg);
+            log(ERROR_INT, msg, null);
         } else {
             log(ERROR, msg);
         }
@@ -286,7 +296,7 @@ class LoggerImpl implements Logger {
     @Override
     public void error(String format, Object arg) {
         if (loggerEnable) {
-            logger.error(format, arg);
+            log(ERROR_INT, format, null, arg);
         } else {
             log(ERROR, format, arg);
         }
@@ -295,7 +305,7 @@ class LoggerImpl implements Logger {
     @Override
     public void error(String format, Object arg1, Object arg2) {
         if (loggerEnable) {
-            logger.error(format, arg1, arg2);
+            log(ERROR_INT, format, null, arg1, arg2);
         } else {
             log(ERROR, format, arg1, arg2);
         }
@@ -304,7 +314,7 @@ class LoggerImpl implements Logger {
     @Override
     public void error(String format, Object... arguments) {
         if (loggerEnable) {
-            logger.error(format, arguments);
+        	log(ERROR_INT, format, null, arguments);
         } else {
             log(ERROR, format, arguments);
         }
@@ -313,10 +323,26 @@ class LoggerImpl implements Logger {
     @Override
     public void error(String msg, Throwable t) {
         if (loggerEnable) {
-            logger.error(msg, t);
+            log(ERROR_INT, msg, t);
         } else {
             log(ERROR, msg, t);
         }
+    }
+    
+    
+    void log(int level, String message, Throwable throwable, Object... args) {
+    	if (loggerLocateEnable) {
+			LocationAwareLogger.class.cast(logger).log(null, LOCATION, level, message, args, throwable);
+			return;
+		}
+    	Object[] arguments = toArguments(throwable, args);
+    	switch (level) {
+		case INFO_INT: logger.info(message, arguments);return;
+		case WARN_INT: logger.warn(message, arguments);return;
+		case ERROR_INT: logger.error(message, arguments);return;
+		case DEBUG_INT: logger.debug(message, arguments);return;
+		default: logger.trace(message, arguments);return;
+		}
     }
 
     void log(Level level, String message, Object... args) {
@@ -332,6 +358,19 @@ class LoggerImpl implements Logger {
                 System.out.println(message);
             }
         }
+    }
+    
+    
+    static Object[] toArguments(Throwable e, Object... args) {
+    	if (e == null) {
+			return args;
+		} else if (args == null) {
+			return new Object[] {e};
+		}
+    	Object[] arguments = new Object[args.length + 1];
+    	System.arraycopy(args, 0, e, 0, args.length);
+    	arguments[args.length] = e;
+    	return arguments;
     }
     
     static String format(String format, Object... args) {
