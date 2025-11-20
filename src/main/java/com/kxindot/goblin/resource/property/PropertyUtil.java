@@ -1,16 +1,23 @@
 package com.kxindot.goblin.resource.property;
 
+import static com.kxindot.goblin.Classes.getAvailableClassLoader;
 import static com.kxindot.goblin.Classes.isAssignableFrom;
 import static com.kxindot.goblin.Classes.isPrimitiveOrWrapper;
+import static com.kxindot.goblin.Objects.EMP;
+import static com.kxindot.goblin.Objects.isBlank;
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.newConcurrentHashMap;
+import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Throws.silentThrex;
 import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.io.IO.openInputStream;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Properties;
 
@@ -29,12 +36,30 @@ import com.kxindot.goblin.resource.property.resolver.StringPropertyResolver;
 public class PropertyUtil {
 	
 	/**
+	 * 从文件中加载配置.返回{@link Properties}对象.
+	 * @param file File
+	 * @return {@link Properties}
+	 */
+	public static Properties loadProperties(File file) {
+		return loadProperties(openInputStream(file));
+	}
+	
+	/**
+	 * 从文件中加载配置.返回{@link Properties}对象.
+	 * @param file Path
+	 * @return {@link Properties}
+	 */
+	public static Properties loadProperties(Path file) {
+		return loadProperties(openInputStream(file));
+	}
+	
+	/**
 	 * 从输入流中加载配置.返回{@link Properties}对象.
 	 * @param in InputStream
 	 * @return {@link Properties}
 	 */
-    public static Properties load(InputStream in) {
-        return load(in, false);
+    public static Properties loadProperties(InputStream in) {
+        return loadProperties(in, false);
     }
     
     /**
@@ -43,12 +68,12 @@ public class PropertyUtil {
      * @param ordered 按顺序加载
      * @return {@link Properties}
      */
-    public static Properties load(InputStream in, boolean ordered) {
+    public static Properties loadProperties(InputStream in, boolean ordered) {
     	Properties properties = ordered ? new OrderedProperties() : new Properties();
     	try {
     		properties.load(in);
     	} catch (IOException e) {
-    		silentThrex(e, "加载数据流异常!");
+    		silentThrex(e, "加载配置：读取字节输入流异常");
     	}
     	return properties;
     }
@@ -58,8 +83,8 @@ public class PropertyUtil {
 	 * @param reader Reader
 	 * @return {@link Properties}
 	 */
-    public static Properties load(Reader reader) {
-        return load(reader, false);
+    public static Properties loadProperties(Reader reader) {
+        return loadProperties(reader, false);
     }
     
     /**
@@ -68,12 +93,12 @@ public class PropertyUtil {
      * @param ordered 按顺序加载
      * @return {@link Properties}
      */
-    public static Properties load(Reader reader, boolean ordered) {
+    public static Properties loadProperties(Reader reader, boolean ordered) {
     	Properties properties = ordered ? new OrderedProperties() : new Properties();
     	try {
     		properties.load(reader);
     	} catch (IOException e) {
-    		silentThrex(e, "加载字符数据流异常!");
+    		silentThrex(e, "加载配置：读取字符输入流异常");
     	}
     	return properties;
     }
@@ -225,24 +250,97 @@ public class PropertyUtil {
         return getProperty(name, properties, String.class, defaultValue);
     }
     
+    
+    public static <T> T getProperties(Class<T> beanType) {
+    	return getProperties(beanType, getAvailableClassLoader());
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, String resourceName) {
+    	return getProperties(beanType, null, resourceName);
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, ClassLoader classLoader) {
+    	com.kxindot.goblin.resource.property.Properties annotation = 
+    			beanType.getAnnotation(com.kxindot.goblin.resource.property.Properties.class);
+    	if (isNull(annotation)) {
+			threx(IllegalArgumentException::new, "类需标注@Properties注解: %s", beanType.getName());
+		}
+    	String name = annotation.resource();
+    	if (isBlank(name)) {
+			threx(IllegalArgumentException::new, "请使用@Properties#file字段指定资源文件名称: ", beanType.getName());
+		}
+    	return getProperties(beanType, classLoader, name);
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, ClassLoader classLoader, String resourceName) {
+    	beanType.getName();
+    	requireNotBlank(resourceName, "资源文件名称不能等于null或空字符串");
+    	if (isNull(classLoader)) {
+			classLoader = getAvailableClassLoader();
+		}
+    	InputStream inputStream = classLoader.getResourceAsStream(resourceName);
+    	return isNull(inputStream) ? null : getProperties(beanType, inputStream);
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, File file) {
+    	return getProperties(beanType, file.toPath());
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, Path file) {
+    	return getProperties(beanType, openInputStream(file));
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, InputStream inputStream) {
+    	return getProperties(beanType, loadProperties(inputStream));
+    }
+    
+    
+    public static <T> T getProperties(Class<T> beanType, Reader reader) {
+    	return getProperties(beanType, loadProperties(reader));
+    }
+    
+    
+    @SuppressWarnings("unchecked")
+	public static <T> T getProperties(Class<T> beanType, Properties properties) {
+    	com.kxindot.goblin.resource.property.Properties annotation = 
+    			beanType.getAnnotation(com.kxindot.goblin.resource.property.Properties.class);
+    	final String prefix = isNull(annotation) ? EMP : annotation.prefix();
+    	final boolean ignoreNotFound = isNull(annotation) ? true : annotation.ignoreNotFound();
+    	JavaBeanPropertyResolver resolver = new JavaBeanPropertyResolver(prefix, beanType, ignoreNotFound);
+        return (T) resolver.resolve(properties);
+    }
+    
+    
     /**
      * 解析JavaBean信息,并将配置文件对应信息映射到JavaBean中并返回.
+     * 
      * @param <T>
      * @param bean {@code Class<T>}
      * @param in InputStream
      * @return T 
+     * @deprecated 1.1.9版本废弃，建议使用{@link #getProperties(Class, InputStream)}
      */
+    @Deprecated
     public static <T> T getJavaBean(Class<T> bean, InputStream in) {
-        return getJavaBean(bean, load(in));
+        return getJavaBean(bean, loadProperties(in));
     }
 
     /**
      * 解析JavaBean信息,并将配置文件对应信息映射到JavaBean中并返回.
+     * 
      * @param <T>
      * @param bean {@code Class<T>}
      * @param properties Properties
      * @return T 
+     * @deprecated 1.1.9版本废弃，建议使用{@link #getProperties(Class, Properties)}
      */
+    @Deprecated
     @SuppressWarnings("unchecked")
 	public static <T> T getJavaBean(Class<T> bean, Properties properties) {
     	com.kxindot.goblin.resource.property.Properties annotation = 
@@ -295,6 +393,5 @@ public class PropertyUtil {
 		}
 		return (PropertyResolver<T>) resolver;
 	}
-	
 	
 }

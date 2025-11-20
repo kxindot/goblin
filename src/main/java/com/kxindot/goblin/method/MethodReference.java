@@ -8,7 +8,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import com.kxindot.goblin.Objects;
-import com.kxindot.goblin.concurrent.ThreadCompletableExecutor;
+import com.kxindot.goblin.Throws.WrapperException;
+import com.kxindot.goblin.concurrent.CompletableExecutorService;
 import com.kxindot.goblin.concurrent.Threads;
 import com.kxindot.goblin.method.function.NoArgConsumer;
 import com.kxindot.goblin.method.function.NoArgFunction;
@@ -201,16 +202,17 @@ public interface MethodReference<T, R> {
     
     /**
      * 将方法调用提交至多任务同步完成线程池.
-     * 提交完成后,可调用{@link ThreadCompletableExecutor#complete()}
-     * 或{@link ThreadCompletableExecutor#complete(int, java.util.concurrent.TimeUnit)}
+     * 提交完成后,可调用{@link CompletableExecutorService#complete()}
+     * 或{@link CompletableExecutorService#complete(int, java.util.concurrent.TimeUnit)}
      * 方法异步运行已提交的任务.
      * 
+     * @param id 任务ID
      * @param obj 对象实例
      * @param executor 多任务同步完成线程池
      * @throws IllegalArgumentException 若obj==null,则抛出此异常.
      * @throws NullPointerException 若executor==null,则抛出此异常.
      */
-    void commit(T obj, ThreadCompletableExecutor executor);
+    void commit(String id, T obj, CompletableExecutorService executor);
     
     
     /**
@@ -281,7 +283,7 @@ public interface MethodReference<T, R> {
 			try {
 				return invoke(obj, method, params);
 			} catch (Throwable e) {
-				throw new MethodInvocationException("", e);
+				throw new MethodInvocationException("调用方法异常", e);
 			}
 		}
         
@@ -298,9 +300,9 @@ public interface MethodReference<T, R> {
         }
         
         @Override
-        public void commit(T obj, ThreadCompletableExecutor executor) {
+        public void commit(String id, T obj, CompletableExecutorService executor) {
         	this.obj = requireNotNull(obj);
-        	executor.commit(this.new Runner());
+        	executor.commit(id, this.new Runner());
         }
         
         /**
@@ -335,14 +337,10 @@ public interface MethodReference<T, R> {
      * 
      * @author ZhaoQingJiang
      */
-    public class MethodInvocationException extends RuntimeException {
+    public class MethodInvocationException extends WrapperException {
 
         private static final long serialVersionUID = -2675028474403209435L;
 
-        public MethodInvocationException(Throwable cause) {
-        	super(cause);
-        }
-        
         public MethodInvocationException(String message, Throwable cause) {
             super(message, cause);
         }

@@ -17,6 +17,7 @@ public class Regex {
     
     /**
      * 判断指定的字符串是否匹配对应的正则表达式
+     * 
      * @param text 待匹配字符串
      * @param regex 正则表达式
      * @return boolean 若匹配返回true,反之false
@@ -26,6 +27,36 @@ public class Regex {
             return false;
         }
         return compile(regex).matcher(text).matches();
+    }
+    
+    /**
+     * TODO : 1.2.0<br>
+     * 
+     * 对正则关键字进行转义。
+     * <pre>
+     * 
+     * </pre>
+     * 
+     * @param keyword char
+     * @return String
+     */
+    public static String escapeKeyword(char keyword) {
+    	throw new AbstractMethodError();
+    }
+    
+    /**
+     * TODO : 1.2.0<br>
+     * 
+     * 对正则关键字进行转义。
+     * <pre>
+     * 
+     * </pre>
+     * 
+     * @param str String
+     * @return String
+     */
+    public static String escapeString(String str) {
+    	throw new AbstractMethodError();
     }
     
     /**
