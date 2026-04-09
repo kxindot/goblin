@@ -70,8 +70,8 @@ public class PropertyUtil {
      */
     public static Properties loadProperties(InputStream in, boolean ordered) {
     	Properties properties = ordered ? new OrderedProperties() : new Properties();
-    	try {
-    		properties.load(in);
+    	try (InputStream input = in) {
+    		properties.load(input);
     	} catch (IOException e) {
     		silentThrex(e, "加载配置：读取字节输入流异常");
     	}
