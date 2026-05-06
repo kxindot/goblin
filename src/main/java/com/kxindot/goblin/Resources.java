@@ -1543,18 +1543,15 @@ public class Resources {
     	if (isFile(path)) {
     		delete(path);
 		} else if (isDirectory(path)) {
-			Stream<Path> list = null;
-			try {
-				list = Files.list(path);
+			try (Stream<Path> list = Files.list(path)) {
+				Iterator<Path> iterator = list.iterator();
+				while (iterator.hasNext()) {
+					deleteIfExists((Path) iterator.next());
+				}
+				delete(path);
 			} catch (IOException e) {
 				silentThrex(e);
 			}
-			Iterator<Path> iterator = list.iterator();
-			while (iterator.hasNext()) {
-				deleteIfExists((Path) iterator.next());
-			}
-			delete(path);
-			list.close();
 		}
     }
     
