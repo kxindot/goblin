@@ -1,5 +1,6 @@
 package com.kxindot.goblin;
 
+import static com.kxindot.goblin.Objects.Dot;
 import static com.kxindot.goblin.Objects.EMP;
 import static com.kxindot.goblin.Objects.contains;
 import static com.kxindot.goblin.Objects.isBlank;
@@ -489,6 +490,20 @@ public final class Classes {
         	fullName = toPackagePattern(fullName);
         }
         return substringBeforeLast(fullName, Package_Separator);
+    }
+    
+    /**
+     * 根据全类名获取简单类名。
+     * 
+     * @param fullName String
+     * @return String
+     */
+    public static String getSimpleClassName(String fullName) {
+    	if (fullName.contains(Path_Separator)) {
+    		fullName = toPackagePattern(fullName);
+    	}
+    	int index = fullName.lastIndexOf(Dot);
+		return index == -1 ? fullName : fullName.substring(++index);
     }
     
     /**
