@@ -1652,25 +1652,30 @@ public class Resources {
     public static IOWriter load(Writer writer) {
     	return IO.output(writer);
     }
-    
+
     
     public static byte[] readByte(InputStream in) {
-    	return load(in).readBytes();
+    	return load(in).buf(4096).readBytes();
+    }
+    
+    
+    public static byte[] readByte(Path file) {
+    	return load(IO.openInputStream(file)).buf(4096).readBytes();
     }
     
     
     public static String readString(Path path) {
-    	return load(IO.openInputStream(path)).readString();
+    	return load(IO.openInputStream(path)).buf(4096).readString();
     }
     
     
     public static String readString(InputStream in) {
-    	return load(in).readString();
+    	return load(in).buf(4096).readString();
     }
     
     
     public static String readString(Reader reader) {
-    	return load(reader).read();
+    	return load(reader).buf(4096).read();
     }
     
     
