@@ -1,16 +1,25 @@
 package com.kxindot.goblin.method;
 
+import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.requireNotNull;
+import static com.kxindot.goblin.Throws.threx;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 import com.kxindot.goblin.Objects;
+import com.kxindot.goblin.Reflections;
+import com.kxindot.goblin.Reflections.MethodLambda;
 import com.kxindot.goblin.Throws.WrapperException;
 import com.kxindot.goblin.concurrent.CompletableExecutorService;
 import com.kxindot.goblin.concurrent.Threads;
+import com.kxindot.goblin.method.function.FiveArgConsumer;
+import com.kxindot.goblin.method.function.FiveArgFunction;
+import com.kxindot.goblin.method.function.FourArgConsumer;
+import com.kxindot.goblin.method.function.FourArgFunction;
 import com.kxindot.goblin.method.function.NoArgConsumer;
 import com.kxindot.goblin.method.function.NoArgFunction;
 import com.kxindot.goblin.method.function.OneArgConsumer;
@@ -18,16 +27,30 @@ import com.kxindot.goblin.method.function.OneArgFunction;
 import com.kxindot.goblin.method.function.ReflectMethodReference;
 import com.kxindot.goblin.method.function.ReflectMethodReference.CglibProxyMethodReference;
 import com.kxindot.goblin.method.function.ReflectMethodReference.JavaReflectMethodReference;
+import com.kxindot.goblin.method.function.SixArgConsumer;
+import com.kxindot.goblin.method.function.SixArgFunction;
 import com.kxindot.goblin.method.function.ThreeArgConsumer;
 import com.kxindot.goblin.method.function.ThreeArgFunction;
 import com.kxindot.goblin.method.function.TwoArgConsumer;
 import com.kxindot.goblin.method.function.TwoArgFunction;
+import com.kxindot.goblin.method.reference.FiveArgConsumerReference;
+import com.kxindot.goblin.method.reference.FiveArgConsumerReference.FiveArgConsumerReferenceImpl;
+import com.kxindot.goblin.method.reference.FiveArgFunctionReference;
+import com.kxindot.goblin.method.reference.FiveArgFunctionReference.FiveArgMethodReferenceImpl;
+import com.kxindot.goblin.method.reference.FourArgConsumerReference;
+import com.kxindot.goblin.method.reference.FourArgConsumerReference.FourArgConsumerReferenceImpl;
+import com.kxindot.goblin.method.reference.FourArgFunctionReference;
+import com.kxindot.goblin.method.reference.FourArgFunctionReference.FourArgMethodReferenceImpl;
 import com.kxindot.goblin.method.reference.NoArgConsumerReference.NoArgConsumerReferenceImpl;
 import com.kxindot.goblin.method.reference.NoArgFunctionReference.NoArgFunctionReferenceImpl;
 import com.kxindot.goblin.method.reference.OneArgConsumerReference;
 import com.kxindot.goblin.method.reference.OneArgConsumerReference.OneArgConsumerReferenceImpl;
 import com.kxindot.goblin.method.reference.OneArgFunctionReference;
 import com.kxindot.goblin.method.reference.OneArgFunctionReference.OneArgFunctionReferenceImpl;
+import com.kxindot.goblin.method.reference.SixArgConsumerReference;
+import com.kxindot.goblin.method.reference.SixArgConsumerReference.SixArgConsumerReferenceImpl;
+import com.kxindot.goblin.method.reference.SixArgFunctionReference;
+import com.kxindot.goblin.method.reference.SixArgFunctionReference.SixArgMethodReferenceImpl;
 import com.kxindot.goblin.method.reference.ThreeArgConsumerReference;
 import com.kxindot.goblin.method.reference.ThreeArgConsumerReference.ThreeArgConsumerReferenceImpl;
 import com.kxindot.goblin.method.reference.ThreeArgFunctionReference;
@@ -151,6 +174,105 @@ public interface MethodReference<T, R> {
     }
     
     /**
+     * 创建四参数无返回值的方法引用.
+     * 
+     * @param <T> 方法所属类类型
+     * @param <P1> 方法第一参数类型
+     * @param <P2> 方法第二参数类型
+     * @param <P3> 方法第三参数类型
+     * @param <P4> 方法第四参数类型
+     * @param consumer {@link FourArgConsumer}
+     * @return {@link FourArgConsumerReference}
+     */
+    public static <T, P1, P2, P3, P4> FourArgConsumerReference<T, P1, P2, P3, P4> fourArgs(FourArgConsumer<T, P1, P2, P3, P4> consumer) {
+    	return new FourArgConsumerReferenceImpl<>(consumer);
+    }
+    
+    /**
+     * 创建四参数有返回值的方法引用.
+     * 
+     * @param <T> 方法所属类类型
+     * @param <P1> 方法第一参数类型
+     * @param <P2> 方法第二参数类型
+     * @param <P3> 方法第三参数类型
+     * @param <P4> 方法第四参数类型
+     * @param <R> 方法返回值类型
+     * @param function {@link FourArgFunction}
+     * @return {@link FourArgFunctionReference}
+     */
+    public static <T, P1, P2, P3, P4, R> FourArgFunctionReference<T, P1, P2, P3, P4, R> fourArgs(FourArgFunction<T, P1, P2, P3, P4, R> function) {
+    	return new FourArgMethodReferenceImpl<>(function);
+    }
+    
+    /**
+     * 创建五参数无返回值的方法引用.
+     * 
+     * @param <T> 方法所属类类型
+     * @param <P1> 方法第一参数类型
+     * @param <P2> 方法第二参数类型
+     * @param <P3> 方法第三参数类型
+     * @param <P4> 方法第四参数类型
+     * @param <P5> 方法第五参数类型
+     * @param consumer {@link FiveArgConsumer}
+     * @return {@link FiveArgConsumerReference}
+     */
+    public static <T, P1, P2, P3, P4, P5> FiveArgConsumerReference<T, P1, P2, P3, P4, P5> fiveArgs(FiveArgConsumer<T, P1, P2, P3, P4, P5> consumer) {
+    	return new FiveArgConsumerReferenceImpl<>(consumer);
+    }
+    
+    /**
+     * 创建五参数有返回值的方法引用.
+     * 
+     * @param <T> 方法所属类类型
+     * @param <P1> 方法第一参数类型
+     * @param <P2> 方法第二参数类型
+     * @param <P3> 方法第三参数类型
+     * @param <P4> 方法第四参数类型
+     * @param <P5> 方法第五参数类型
+     * @param <R> 方法返回值类型
+     * @param function {@link FiveArgFunction}
+     * @return {@link FiveArgFunctionReference}
+     */
+    public static <T, P1, P2, P3, P4, P5, R> FiveArgFunctionReference<T, P1, P2, P3, P4, P5, R> fiveArgs(FiveArgFunction<T, P1, P2, P3, P4, P5, R> function) {
+    	return new FiveArgMethodReferenceImpl<>(function);
+    }
+    
+    /**
+     * 创建六参数无返回值的方法引用.
+     * 
+     * @param <T> 方法所属类类型
+     * @param <P1> 方法第一参数类型
+     * @param <P2> 方法第二参数类型
+     * @param <P3> 方法第三参数类型
+     * @param <P4> 方法第四参数类型
+     * @param <P5> 方法第五参数类型
+     * @param <P6> 方法第六参数类型
+     * @param consumer {@link SixArgConsumer}
+     * @return {@link SixArgConsumerReference}
+     */
+    public static <T, P1, P2, P3, P4, P5, P6> SixArgConsumerReference<T, P1, P2, P3, P4, P5, P6> sixArgs(SixArgConsumer<T, P1, P2, P3, P4, P5, P6> consumer) {
+    	return new SixArgConsumerReferenceImpl<>(consumer);
+    }
+    
+    /**
+     * 创建六参数有返回值的方法引用.
+     * 
+     * @param <T> 方法所属类类型
+     * @param <P1> 方法第一参数类型
+     * @param <P2> 方法第二参数类型
+     * @param <P3> 方法第三参数类型
+     * @param <P4> 方法第四参数类型
+     * @param <P5> 方法第五参数类型
+     * @param <P6> 方法第六参数类型
+     * @param <R> 方法返回值类型
+     * @param function {@link SixArgFunction}
+     * @return {@link SixArgFunctionReference}
+     */
+    public static <T, P1, P2, P3, P4, P5, P6, R> SixArgFunctionReference<T, P1, P2, P3, P4, P5, P6, R> fiveArgs(SixArgFunction<T, P1, P2, P3, P4, P5, P6, R> function) {
+    	return new SixArgMethodReferenceImpl<>(function);
+    }
+    
+    /**
      * 创建反射方法对象{@link Method}的方法引用.
      * 
      * @param method Method
@@ -169,6 +291,15 @@ public interface MethodReference<T, R> {
     public static ReflectMethodReference<Object, Object> method(MethodProxy method) {
         return new CglibProxyMethodReference(method);
     }
+    
+    
+    /**
+     * 处理调用异常。
+     * 
+     * @param handler {@code BiConsumer<MethodLambda, Throwable>}
+     * @return {@code MethodReference<T, R>}
+     */
+    MethodReference<T, R> throwable(BiConsumer<MethodLambda, Throwable> handler);
     
     /**
      * 同步调用方法.若方法运行出现错误,则会抛出{@link MethodInvocationException}异常.
@@ -225,6 +356,7 @@ public interface MethodReference<T, R> {
         private T obj;
         private final M method;
         private Object[] params;
+        private BiConsumer<MethodLambda, Throwable> handler;
         private int index = 0;
         private final int max;
         
@@ -278,13 +410,26 @@ public interface MethodReference<T, R> {
             } 
         }
         
+        @Override
+        public MethodReference<T, R> throwable(BiConsumer<MethodLambda, Throwable> handler) {
+        	this.handler = handler;
+        	return this;
+        }
+        
 		@Override
 		public R invoke(T obj) {
+			R r = null;
 			try {
-				return invoke(obj, method, params);
+				r = invoke(obj, method, params);
 			} catch (Throwable e) {
-				throw new MethodInvocationException("调用方法异常", e);
+				MethodLambda lambda = Reflections.parseMethodReferenceToLambda(method);
+				if (isNull(handler)) {
+					threx(MethodInvocationException::new, e, "%s#%s方法运行异常"
+							, lambda.getSimpleClassName(), lambda.getMethodName());
+				}
+				handler.accept(lambda, e);
 			}
+			return r;
 		}
         
         @Override

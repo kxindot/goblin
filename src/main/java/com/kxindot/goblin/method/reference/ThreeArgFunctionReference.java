@@ -1,8 +1,16 @@
 package com.kxindot.goblin.method.reference;
 
+import java.util.function.BiConsumer;
+
+import com.kxindot.goblin.Reflections.MethodLambda;
 import com.kxindot.goblin.method.MethodReference;
 import com.kxindot.goblin.method.function.ThreeArgFunction;
 
+/**
+ * 三参数方法引用。
+ * 
+ * @author ZhaoQingJiang
+ */
 public interface ThreeArgFunctionReference<T, P1, P2, P3, R> extends MethodReference<T, R> {
     
     ThreeArgFunctionReference<T, P1, P2, P3, R> first(P1 first);
@@ -10,6 +18,13 @@ public interface ThreeArgFunctionReference<T, P1, P2, P3, R> extends MethodRefer
     ThreeArgFunctionReference<T, P1, P2, P3, R> second(P2 second);
     
     ThreeArgFunctionReference<T, P1, P2, P3, R> third(P3 third);
+    
+    
+    /**
+     * @return {@code ThreeArgFunctionReference<T, P1, P2, P3, R>}
+     */
+    @Override
+    ThreeArgFunctionReference<T, P1, P2, P3, R> throwable(BiConsumer<MethodLambda, Throwable> handler);
     
     
     /**
@@ -49,6 +64,12 @@ public interface ThreeArgFunctionReference<T, P1, P2, P3, R> extends MethodRefer
         @Override
         protected int max() {
             return 3;
+        }
+        
+        @Override
+        public ThreeArgFunctionReference<T, P1, P2, P3, R> throwable(BiConsumer<MethodLambda, Throwable> handler) {
+        	super.throwable(handler);
+        	return this;
         }
 
         @Override

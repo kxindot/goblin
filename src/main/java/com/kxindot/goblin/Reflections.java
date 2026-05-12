@@ -2,6 +2,7 @@ package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Classes.isAssignableFrom;
 import static com.kxindot.goblin.Classes.isInstance;
+import static com.kxindot.goblin.Classes.toPackagePattern;
 import static com.kxindot.goblin.Objects.EMPTY_OBJ_ARRAY;
 import static com.kxindot.goblin.Objects.asList;
 import static com.kxindot.goblin.Objects.convert;
@@ -70,7 +71,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T> String getMethodName(NoArgConsumer<T> consumer) {
-		return getMethodNameByReference(consumer);
+		return parseMethodReference(consumer).getImplMethodName();
 	}
 	
 	/**
@@ -80,7 +81,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, U> String getMethodName(OneArgConsumer<T, U> consumer) {
-		return getMethodNameByReference(consumer);
+		return parseMethodReference(consumer).getImplMethodName();
 	}
 	
 	/**
@@ -91,7 +92,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, P1, P2> String getMethodName(TwoArgConsumer<T, P1, P2> consumer) {
-		return getMethodNameByReference(consumer);
+		return parseMethodReference(consumer).getImplMethodName();
 	}
 	
 	/**
@@ -102,7 +103,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, P1, P2, P3> String getMethodName(ThreeArgConsumer<T, P1, P2, P3> consumer) {
-		return getMethodNameByReference(consumer);
+		return parseMethodReference(consumer).getImplMethodName();
 	}
 	
 	/**
@@ -113,7 +114,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, R> String getMethodName(NoArgFunction<T, R> function) {
-		return getMethodNameByReference(function);
+		return parseMethodReference(function).getImplMethodName();
 	}
 	
 	/**
@@ -124,7 +125,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, P, R> String getMethodName(OneArgFunction<T, P, R> function) {
-		return getMethodNameByReference(function);
+		return parseMethodReference(function).getImplMethodName();
 	}
 
 	/**
@@ -135,7 +136,7 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, P1, P2, R> String getMethodName(TwoArgFunction<T, P1, P2, R> function) {
-		return getMethodNameByReference(function);
+		return parseMethodReference(function).getImplMethodName();
 	}
 
 	/**
@@ -146,29 +147,67 @@ public final class Reflections {
 	 * @return String 方法名称
 	 */
 	public static <T, P1, P2, P3, R> String getMethodName(ThreeArgFunction<T, P1, P2, P3, R> function) {
-		return getMethodNameByReference(function);
+		return parseMethodReference(function).getImplMethodName();
 	}
 	
 	/**
-	 * 获取方法名称.入参必须为方法引用.如: 
-	 * <pre>
-	 * 静态方法引用: String::valueOf
-	 * 实例方法引用: str::toString -> String str;
-	 * </pre>
+	 * 解析方法引用，返回lambda信息。
 	 * 
-	 * @param reference 方法引用
-	 * @return String
+	 * @param methodReference Object
+	 * @return SerializedLambda
 	 */
-	private static String getMethodNameByReference(Object reference) {
-		Class<?> type = reference.getClass();
+	public static SerializedLambda parseMethodReference(Object methodReference) {
+		Class<?> type = methodReference.getClass();
 		Method method = Reflections.findMethod(type, WRITE_REPLACE);
 		requireNotNull(method, "入参不是一个方法引用对象!");
 		Reflections.makeAccessiable(method);
-		Object result = Reflections.invoke(reference, method);
-		return SerializedLambda.class.cast(result).getImplMethodName();
+		Object result = Reflections.invoke(methodReference, method);
+		return SerializedLambda.class.cast(result);
 	}
-    
-    
+	
+	/**
+	 * 解析方法引用，返回lambda信息。
+	 * 
+	 * @param methodReference Object
+	 * @return MethodLambda
+	 */
+	public static MethodLambda parseMethodReferenceToLambda(Object methodReference) {
+		return new MethodLambda(parseMethodReference(methodReference));
+	}
+	
+	
+	/**
+	 * 方法引用lambda信息。
+	 * 
+	 * @author ZhaoQingJiang
+	 */
+	public final static class MethodLambda {
+		
+		private SerializedLambda lambda;
+
+		MethodLambda(SerializedLambda lambda) {
+			this.lambda = lambda;
+		}
+		
+		public SerializedLambda getSerializedLambda() {
+			return lambda;
+		}
+		
+		public String getClassName() {
+			return toPackagePattern(lambda.getImplClass());
+		}
+		
+		public String getSimpleClassName() {
+			return Classes.getSimpleClassName(lambda.getImplClass());
+		}
+		
+		public String getMethodName() {
+			return lambda.getImplMethodName();
+		}
+		
+	}
+	
+	
     /**
      * 获取指定类的构造器对象.若构造器参数类型数组为null或长度等于0,则返回无参构造器.
      * 
@@ -784,18 +823,7 @@ public final class Reflections {
     
     
     public static Class<?> findGenericParameterType(Class<?> cls, int index) {
-        Class<?> scls = cls.getSuperclass();
-        if (scls == Object.class)
-
-        requireTrue(index >= 0, "不合法的下标值: %d", index);
-        requireTrue(scls != Object.class, "%s没有继承的父类", cls.getSimpleName());
-        int len = scls.getTypeParameters().length;
-        requireTrue(len > 0, "%s的父类%s不是泛型类", cls.getSimpleName(), scls.getSimpleName());
-        requireTrue(len >= index, null, EMPTY_OBJ_ARRAY);
-        Type st = cls.getGenericSuperclass();
-        requireTrue(st != null && st instanceof ParameterizedType, "类%s之父类不是泛型类!", cls.getSimpleName());
-
-        return null;
+        return findGenericParameterType(cls, null, index);
     }
 
     @SuppressWarnings("unchecked")

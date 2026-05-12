@@ -1,5 +1,8 @@
 package com.kxindot.goblin.method.reference;
 
+import java.util.function.BiConsumer;
+
+import com.kxindot.goblin.Reflections.MethodLambda;
 import com.kxindot.goblin.method.MethodReference;
 import com.kxindot.goblin.method.function.ThreeArgConsumer;
 
@@ -17,6 +20,13 @@ public interface ThreeArgConsumerReference<T, P1, P2, P3> extends MethodReferenc
     ThreeArgConsumerReference<T, P1, P2, P3> second(P2 second);
     
     ThreeArgConsumerReference<T, P1, P2, P3> third(P3 third);
+    
+    
+    /**
+     * @return {@code ThreeArgConsumerReference<T, P1, P2, P3>}
+     */
+    @Override
+    ThreeArgConsumerReference<T, P1, P2, P3> throwable(BiConsumer<MethodLambda, Throwable> handler);
     
     
     /**
@@ -56,6 +66,12 @@ public interface ThreeArgConsumerReference<T, P1, P2, P3> extends MethodReferenc
         @Override
         protected int max() {
             return 3;
+        }
+        
+        @Override
+        public ThreeArgConsumerReference<T, P1, P2, P3> throwable(BiConsumer<MethodLambda, Throwable> handler) {
+        	super.throwable(handler);
+        	return this;
         }
 
         @Override
