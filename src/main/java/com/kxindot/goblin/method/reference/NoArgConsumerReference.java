@@ -29,7 +29,7 @@ public interface NoArgConsumerReference<T> extends MethodReference<T, Void> {
         protected int max() {
             return 0;
         }
-
+        
         @Override
         protected Void invoke(T obj, NoArgConsumer<T> method, Object[] args) throws Throwable {
             method.accept(obj);

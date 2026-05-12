@@ -1,5 +1,8 @@
 package com.kxindot.goblin.method.reference;
 
+import java.util.function.BiConsumer;
+
+import com.kxindot.goblin.Reflections.MethodLambda;
 import com.kxindot.goblin.method.MethodReference;
 import com.kxindot.goblin.method.function.OneArgFunction;
 
@@ -13,6 +16,12 @@ import com.kxindot.goblin.method.function.OneArgFunction;
 public interface OneArgFunctionReference<T, P, R> extends MethodReference<T, R> {
     
     MethodReference<T, R> param(P param);
+    
+    /**
+     * @return {@code OneArgFunctionReference<T, P, R>}
+     */
+    @Override
+    OneArgFunctionReference<T, P, R> throwable(BiConsumer<MethodLambda, Throwable> handler);
     
     
     /**
@@ -40,6 +49,12 @@ public interface OneArgFunctionReference<T, P, R> extends MethodReference<T, R> 
         @Override
         protected int max() {
             return 1;
+        }
+        
+        @Override
+        public OneArgFunctionReference<T, P, R> throwable(BiConsumer<MethodLambda, Throwable> handler) {
+        	super.throwable(handler);
+        	return this;
         }
 
         @Override
