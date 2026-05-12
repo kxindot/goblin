@@ -823,18 +823,7 @@ public final class Reflections {
     
     
     public static Class<?> findGenericParameterType(Class<?> cls, int index) {
-        Class<?> scls = cls.getSuperclass();
-        if (scls == Object.class)
-
-        requireTrue(index >= 0, "不合法的下标值: %d", index);
-        requireTrue(scls != Object.class, "%s没有继承的父类", cls.getSimpleName());
-        int len = scls.getTypeParameters().length;
-        requireTrue(len > 0, "%s的父类%s不是泛型类", cls.getSimpleName(), scls.getSimpleName());
-        requireTrue(len >= index, null, EMPTY_OBJ_ARRAY);
-        Type st = cls.getGenericSuperclass();
-        requireTrue(st != null && st instanceof ParameterizedType, "类%s之父类不是泛型类!", cls.getSimpleName());
-
-        return null;
+        return findGenericParameterType(cls, null, index);
     }
 
     @SuppressWarnings("unchecked")
