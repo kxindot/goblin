@@ -1,11 +1,7 @@
 package com.kxindot.goblin;
 
 import static com.kxindot.goblin.Reflections.newArrayInstance;
-import static com.kxindot.goblin.Throws.silentThrex;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,6 +82,54 @@ public final class Objects {
      */
     public static boolean isNull(Object obj) {
         return obj == null;
+    }
+    
+    /**
+     * 若传入参数中存在null，则返回true；反之全不为null，则返回false。
+     * <pre>
+     * isAnyNull(null,"a")  =  true
+     * isAnyNull(1,"a")     =  false
+     * </pre>
+     * 
+     * @param obj1 Object
+     * @param obj2 Object
+     * @return boolean
+     */
+    public static boolean isAnyNull(Object obj1, Object obj2) {
+    	return obj1 == null || obj2 == null;
+    }
+    
+    /**
+     * 若传入参数中存在null，则返回true；反之全不为null，则返回false。
+     * <pre>
+     * isAnyNull("a", "b", null)  =  true
+     * isAnyNull(1, "a", "b")     =  false
+     * </pre>
+     * 
+     * @param obj1 Object
+     * @param obj2 Object
+     * @param obj3 Object
+     * @return boolean
+     */
+    public static boolean isAnyNull(Object obj1, Object obj2, Object obj3) {
+    	return obj1 == null || obj2 == null || obj3 == null;
+    }
+    
+    /**
+     * 若传入参数中存在null，则返回true；反之全不为null，则返回false。
+     * <pre>
+     * isAnyNull("a", "b", null, "c")  =  true
+     * isAnyNull(1, "a", 2, "b")       =  false
+     * </pre>
+     * 
+     * @param obj1 Object
+     * @param obj2 Object
+     * @param obj3 Object
+     * @param obj4 Object
+     * @return boolean
+     */
+    public static boolean isAnyNull(Object obj1, Object obj2, Object obj3, Object obj4) {
+    	return obj1 == null || obj2 == null || obj3 == null || obj4 == null;
     }
     
     /**
@@ -944,21 +989,15 @@ public final class Objects {
     
     
     /**
-     * 返回异常的格式化栈追踪信息.
+     * 返回异常的格式化栈追踪信息。1.2.0版本废弃，建议使用{@link Throws#getStackTrace(Throwable)}替换。
      * 
+     * @deprecated 1.2.0
      * @param ex Throwable
      * @return String 栈追踪信息
      */
+    @Deprecated
     public static String toString(Throwable ex) {
-        String stackTrace = null;
-        try (StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw)) {
-            ex.printStackTrace(pw);
-            stackTrace = sw.toString();
-        } catch (IOException e) {
-            silentThrex(e);
-        }
-        return stackTrace;
+        return Throws.getStackTrace(ex);
     }
     
     /**-------------------断言-------------------**/
@@ -1007,639 +1046,749 @@ public final class Objects {
     }
     
     
+    private static final Pattern REQUIRE_METHODS_PATTERN = Pattern.compile("^require[NTF]{1}\\w*|newException$");
+    
     /**
-     * 断言对象等于null
-     * @param obj 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * 重新填充异常堆栈，剔除Objects#requireXXX方法栈帧。
+     * 
+     * @param throwable Throwable
      */
-    public static <T> T requireNull(T obj) {
-        return requireNull(obj, IllegalArgumentException::new);
+    private static Throwable newException(Supplier<Throwable> supplier) {
+    	return Throws.excludeStackFrames(supplier.get(), Objects.class, REQUIRE_METHODS_PATTERN);
     }
     
     /**
+     * 重新填充异常堆栈，剔除Objects#requireXXX方法栈帧。
      * 
-     * @param <T>
-     * @param <E>
-     * @param obj
-     * @param supplier
-     * @return
+     * @param throwable Throwable
      */
-    public static <T, E extends RuntimeException> T requireNull(T obj, Supplier<E> supplier) {
+    private static Throwable newException(Function<String, Throwable> function, String format, Object... args) {
+    	return Throws.excludeStackFrames(function.apply(stringFormat(format, args)), Objects.class, REQUIRE_METHODS_PATTERN);
+    }
+    
+    /**
+     * 若obj不等于null，则抛出{@link IllegalArgumentException}；若obj等于null，直接返回。
+     * 
+     * @param obj Object
+     * @throws IllegalArgumentException
+     */
+    public static void requireNull(Object obj) throws IllegalArgumentException {
+        requireNull(obj, IllegalArgumentException::new);
+    }
+    
+    /**
+     * 若obj不等于null，则抛出{@link IllegalArgumentException}；若obj等于null，直接返回。
+     * 
+     * @param obj Object
+     * @param message String
+     * @throws IllegalArgumentException
+     */
+    public static void requireNull(Object obj, String message) throws IllegalArgumentException {
+        requireNull(obj, IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若obj不等于null，则抛出{@link IllegalArgumentException}；若obj等于null，直接返回。
+     * 
+     * @param obj Object
+     * @param format String
+     * @param args Object[]
+     * @throws IllegalArgumentException
+     */
+    public static void requireNull(Object obj, String format, Object... args) throws IllegalArgumentException {
+        requireNull(obj, IllegalArgumentException::new, format, args);
+    }
+    
+    /**
+     * 若obj不等于null，则使用lambda表达式构造异常并抛出；若obj等于null，直接返回。
+     * 
+     * @param <E>
+     * @param obj Object
+     * @param supplier {@code Supplier<Throwable>}
+     * @throws E
+     */
+    @SuppressWarnings("unchecked")
+	public static <E extends Throwable> void requireNull(Object obj, Supplier<Throwable> supplier) throws E {
         if (obj != null) {
-            throw supplier.get();
+            throw (E) newException(supplier);
         }
-        return obj;
     }
     
     /**
-     * 断言对象等于null
-     * @param obj 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
-     */
-    public static <T> T requireNull(T obj, String message) {
-        return requireNull(obj, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
+     * 若obj不等于null，则使用lambda表达式构造携带指定信息异常并抛出；若obj等于null，直接返回。
      * 
-     * @param <T>
-     * @param obj
-     * @param format
-     * @param args
-     * @return
-     */
-    public static <T> T requireNull(T obj, String format, Object... args) {
-        return requireNull(obj, IllegalArgumentException::new, format, args);
-    }
-    
-    /**
-     * 
-     * @param <T>
      * @param <E>
-     * @param obj
-     * @param function
-     * @param message
-     * @return
+     * @param obj Object
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @throws E
      */
-    public static <T, E extends RuntimeException> T requireNull(T obj, Function<String, E> function, String message) {
-        return requireNull(obj, function, message, EMPTY_OBJ_ARRAY);
+    public static <E extends Throwable> void requireNull(Object obj, Function<String, Throwable> function, String message) throws E {
+        requireNull(obj, function, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
+     * 若obj不等于null，则使用lambda表达式构造携带指定信息异常并抛出；若obj等于null，直接返回。
      * 
-     * @param <T>
      * @param <E>
-     * @param obj
-     * @param function
-     * @param format
-     * @param args
-     * @return
+     * @param obj Object
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @throws E
      */
-    public static <T, E extends RuntimeException> T requireNull(T obj, Function<String, E> function, String format, Object... args) {
+    @SuppressWarnings("unchecked")
+	public static <E extends Throwable> void requireNull(Object obj, Function<String, Throwable> function, String format, Object... args) throws E {
         if (obj != null) {
-            throw function.apply(stringFormat(format, args));
+            throw (E) newException(function, format, args);
         }
-        return obj;
     }
     
     /**
-     * 断言对象不等于null
-     * @param obj 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * 若obj等于null，则抛出{@link NullPointerException}；若obj不等于null，则返回obj。
+     * 
+     * @param <T>
+     * @param obj T
+     * @return T
+     * @throws NullPointerException 若obj==null，则抛出此异常
      */
-    public static <T> T requireNotNull(T obj) {
-        return requireNotNull(obj, IllegalArgumentException::new);
+    public static <T> T requireNotNull(T obj) throws NullPointerException {
+        return requireNotNull(obj, NullPointerException::new);
     }
     
     /**
+     * 若obj等于null，则抛出{@link NullPointerException}；若obj不等于null，则返回obj。
+     * 
+     * @param <T>
+     * @param obj T
+     * @param message String
+     * @return T
+     * @throws NullPointerException 若obj==null，则抛出此异常
+     */
+    public static <T> T requireNotNull(T obj, String message) throws NullPointerException {
+        return requireNotNull(obj, NullPointerException::new, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若obj等于null，则抛出{@link NullPointerException}；若obj不等于null，则返回obj。
+     * 
+     * @param <T>
+     * @param obj T
+     * @param format String
+     * @param args Object[]
+     * @return T
+     * @throws NullPointerException 若obj==null，则抛出此异常
+     */
+    public static <T> T requireNotNull(T obj, String format, Object... args) throws NullPointerException {
+        return requireNotNull(obj, NullPointerException::new, format, args);
+    }
+    
+    /**
+     * 若obj等于null，则使用lambda表达式构造异常并抛出；若obj不等于null，则返回obj。
      * 
      * @param <T>
      * @param <E>
-     * @param obj
-     * @param supplier
-     * @return
+     * @param obj T
+     * @param supplier {@code Supplier<Throwable>}
+     * @return T
+     * @throws E 若obj等于null，则抛出supplier构造的异常实例
      */
-    public static <T, E extends RuntimeException> T requireNotNull(T obj, Supplier<E> supplier) {
+    @SuppressWarnings("unchecked")
+	public static <T, E extends Throwable> T requireNotNull(T obj, Supplier<Throwable> supplier) throws E {
         if (obj == null) {
-            throw supplier.get();
+        	throw (E) newException(supplier);
         }
         return obj;
     }
     
     /**
-     * 断言对象不等于null
-     * @param obj 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws NullPointerException 若断言不成立,则抛出该异常
-     */
-    public static <T> T requireNotNull(T obj, String message) {
-        return requireNotNull(obj, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
+     * 若obj等于null，则使用lambda表达式构造携带指定信息异常并抛出；若obj不等于null，则返回obj。
      * 
      * @param <T>
      * @param <E>
-     * @param obj
-     * @param format
-     * @param args
-     * @return
+     * @param obj T
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @return T
+     * @throws E 若obj等于null，则抛出function构造的异常实例
      */
-    public static <T, E extends RuntimeException> T requireNotNull(T obj, String format, Object... args) {
-        return requireNotNull(obj, IllegalArgumentException::new, format, args);
+    public static <T, E extends Throwable> T requireNotNull(T obj, Function<String, Throwable> function, String message) throws E {
+        return requireNotNull(obj, function, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
+     * 若obj等于null，则使用lambda表达式构造携带指定信息异常并抛出；若obj不等于null，则返回obj。
      * 
      * @param <T>
      * @param <E>
-     * @param obj
-     * @param function
-     * @param format
-     * @return
+     * @param obj T
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @return T
+     * @throws E 若obj等于null，则抛出function构造的异常实例
      */
-    public static <T, E extends RuntimeException> T requireNotNull(T obj, Function<String, E> function, String format) {
-        return requireNotNull(obj, function, format, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
-     * 
-     * @param <T>
-     * @param <E>
-     * @param obj
-     * @param function
-     * @param format
-     * @param args
-     * @return
-     */
-    public static <T, E extends RuntimeException> T requireNotNull(T obj, Function<String, E> function, String format, Object... args) {
+    @SuppressWarnings("unchecked")
+	public static <T, E extends Throwable> T requireNotNull(T obj, Function<String, Throwable> function, String format, Object... args) throws E {
         if (obj == null) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(function, format, args);
         }
         return obj;
     }
     
     /**
-     * 断言字符串不等于null且不等于""
-     * @param cs 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
-     */
-    public static <T extends CharSequence> T requireNotEmpty(T cs) {
-        return requireNotEmpty(cs, "input charsequence require not be null or empty");
-    }
-    
-    /**
+     * 若cs等于""，则抛出{@link IllegalArgumentException}；若cs不等于""，则返回cs。
      * 
      * @param <T>
-     * @param <E>
-     * @param cs
-     * @param supplier
-     * @return
+     * @param cs T
+     * @return T
+     * @throws IllegalArgumentException 若cs等于""，则抛出此异常
      */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, Supplier<E> supplier) {
-        if (isEmpty(cs)) {
-            throw supplier.get();
-        }
-        return cs;
+    public static <T extends CharSequence> T requireNotEmpty(T cs) throws IllegalArgumentException {
+        return requireNotEmpty(cs, IllegalArgumentException::new);
     }
     
     /**
-     * 断言字符串不等于null且不等于""
-     * @param cs 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
-     */
-    public static <T extends CharSequence> T requireNotEmpty(T cs, String message) {
-        return requireNotEmpty(cs, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
+     * 若cs等于""，则抛出{@link IllegalArgumentException}；若cs不等于""，则返回cs。
      * 
      * @param <T>
-     * @param <E>
-     * @param cs
-     * @param format
-     * @param args
-     * @return
+     * @param cs T
+     * @param message String
+     * @return T
+     * @throws IllegalArgumentException 若cs等于""，则抛出此异常
      */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, String format, Object... args) {
+    public static <T extends CharSequence> T requireNotEmpty(T cs, String message) throws IllegalArgumentException {
+        return requireNotEmpty(cs, IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若cs等于""，则抛出{@link IllegalArgumentException}；若cs不等于""，则返回cs。
+     * 
+     * @param <T>
+     * @param cs T
+     * @param format String
+     * @param args Object[]
+     * @return T
+     * @throws IllegalArgumentException 若cs等于""，则抛出此异常
+     */
+    public static <T extends CharSequence> T requireNotEmpty(T cs, String format, Object... args) throws IllegalArgumentException {
         return requireNotEmpty(cs, IllegalArgumentException::new, format, args);
     }
     
     /**
+     * 若cs等于""，则使用lambda表达式构造异常并抛出；若cs不等于""，则返回cs。
      * 
      * @param <T>
      * @param <E>
-     * @param cs
-     * @param function
-     * @param format
-     * @return
+     * @param cs T
+     * @param supplier {@code Supplier<Throwable>}
+     * @return T
+     * @throws E 若cs等于""，则抛出function构造的异常实例
      */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, Function<String, E> function, String format) {
-        return requireNotEmpty(cs, function, format, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
-     * 
-     * @param <T>
-     * @param <E>
-     * @param cs
-     * @param function
-     * @param format
-     * @param args
-     * @return
-     */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotEmpty(T cs, Function<String, E> function, String format, Object... args) {
+    @SuppressWarnings("unchecked")
+	public static <T extends CharSequence, E extends Throwable> T requireNotEmpty(T cs, Supplier<Throwable> supplier) throws E {
         if (isEmpty(cs)) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(supplier);
         }
         return cs;
     }
     
     /**
-     * 断言字符串不等于null且不是空字符串
-     * @param cs 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
+     * 若cs等于""，则使用lambda表达式构造携带指定信息异常并抛出；若cs不等于""，则返回cs。
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs T
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @return T
+     * @throws E 若cs等于""，则抛出function构造的异常实例
      */
-    public static <T extends CharSequence> T requireNotBlank(T cs) {
+    public static <T extends CharSequence, E extends Throwable> T requireNotEmpty(T cs, Function<String, Throwable> function, String message) {
+        return requireNotEmpty(cs, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若cs等于""，则使用lambda表达式构造携带指定信息异常并抛出；若cs不等于""，则返回cs。
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs T
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @return T
+     * @throws E 若cs等于""，则抛出function构造的异常实例
+     */
+    @SuppressWarnings("unchecked")
+	public static <T extends CharSequence, E extends Throwable> T requireNotEmpty(T cs, Function<String, Throwable> function, String format, Object... args) throws E {
+        if (isEmpty(cs)) {
+        	throw (E) newException(function, format, args);
+        }
+        return cs;
+    }
+    
+    /**
+     * 若cs等于空字符串，则抛出{@link IllegalArgumentException}；若cs不等于空字符串，则返回cs。
+     * 
+     * @param <T>
+     * @param cs T
+     * @return T
+     * @throws IllegalArgumentException 若cs等于空字符串，则抛出此异常
+     */
+    public static <T extends CharSequence> T requireNotBlank(T cs) throws IllegalArgumentException {
         return requireNotBlank(cs, IllegalArgumentException::new);
     }
     
     /**
+     * 若cs等于空字符串，则抛出{@link IllegalArgumentException}；若cs不等于空字符串，则返回cs。
      * 
      * @param <T>
-     * @param <E>
-     * @param cs
-     * @param supplier
-     * @return
+     * @param cs T
+     * @param message String
+     * @return T
+     * @throws IllegalArgumentException 若cs等于空字符串，则抛出此异常
      */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, Supplier<E> supplier) {
-        if (isBlank(cs)) {
-            throw supplier.get();
-        }
-        return cs;
+    public static <T extends CharSequence> T requireNotBlank(T cs, String message) throws IllegalArgumentException {
+        return requireNotBlank(cs, IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
-     * 断言字符串不等于null且不是空字符串
-     * @param cs 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws BlankCharSequenceException 若断言不成立,则抛出该异常
-     */
-    public static <T extends CharSequence> T requireNotBlank(T cs, String message) {
-        return requireNotBlank(cs, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
+     * 若cs等于空字符串，则抛出{@link IllegalArgumentException}；若cs不等于空字符串，则返回cs。
      * 
      * @param <T>
-     * @param <E>
-     * @param cs
-     * @param format
-     * @param args
-     * @return
+     * @param cs T
+     * @param format String
+     * @param args Object[]
+     * @return T
+     * @throws IllegalArgumentException 若cs等于空字符串，则抛出此异常
      */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, String format, Object... args) {
+    public static <T extends CharSequence> T requireNotBlank(T cs, String format, Object... args) throws IllegalArgumentException {
         return requireNotBlank(cs, IllegalArgumentException::new, format, args);
     }
     
     /**
+     * 若cs等于空字符串，则使用lambda表达式构造异常并抛出；若cs不等于空字符串，则返回cs。
      * 
      * @param <T>
      * @param <E>
-     * @param cs
-     * @param function
-     * @param format
-     * @return
+     * @param cs T
+     * @param supplier {@code Supplier<Throwable>}
+     * @return T
+     * @throws E 若cs等于空字符串，则抛出supplier构造的异常实例
      */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, Function<String, E> function, String format) {
-        return requireNotBlank(cs, function, format, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
-     * 
-     * @param <T>
-     * @param <E>
-     * @param cs
-     * @param function
-     * @param format
-     * @param args
-     * @return
-     */
-    public static <T extends CharSequence, E extends RuntimeException> T requireNotBlank(T cs, Function<String, E> function, String format, Object... args) {
+    @SuppressWarnings("unchecked")
+	public static <T extends CharSequence, E extends Throwable> T requireNotBlank(T cs, Supplier<Throwable> supplier) throws E {
         if (isBlank(cs)) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(supplier);
         }
         return cs;
     }
     
     /**
-     * 断言数组不等于null且length > 0
-     * @param a 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
+     * 若cs等于空字符串，则使用lambda表达式构造携带指定信息异常并抛出；若cs不等于空字符串，则返回cs。
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs T
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @return T
+     * @throws E 若cs等于空字符串，则抛出function构造的异常实例
      */
-    public static <T> T[] requireNotEmpty(T[] array) {
+    public static <T extends CharSequence, E extends Throwable> T requireNotBlank(T cs, Function<String, Throwable> function, String message) throws E {
+        return requireNotBlank(cs, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若cs等于空字符串，则使用lambda表达式构造携带指定信息异常并抛出；若cs不等于空字符串，则返回cs。
+     * 
+     * @param <T>
+     * @param <E>
+     * @param cs T
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @return T
+     * @throws E 若cs等于空字符串，则抛出function构造的异常实例
+     */
+    @SuppressWarnings("unchecked")
+	public static <T extends CharSequence, E extends Throwable> T requireNotBlank(T cs, Function<String, Throwable> function, String format, Object... args) throws E {
+        if (isBlank(cs)) {
+        	throw (E) newException(function, format, args);
+        }
+        return cs;
+    }
+    
+    /**
+     * 若array等于null或长度为0，则使用抛出{@link IllegalArgumentException}；反之，则返回array。
+     * 
+     * @param <T>
+     * @param array T[]
+     * @return T[]
+     * @throws IllegalArgumentException 若array等于null或长度为0，则抛出此异常
+     */
+    public static <T> T[] requireNotEmpty(T[] array) throws IllegalArgumentException {
         return requireNotEmpty(array, IllegalArgumentException::new);
     }
     
     /**
+     * 若array等于null或长度为0，则使用抛出{@link IllegalArgumentException}；反之，则返回array。
      * 
      * @param <T>
-     * @param <E>
-     * @param array
-     * @param supplier
-     * @return
+     * @param array T[]
+     * @param message String
+     * @return T[]
+     * @throws IllegalArgumentException 若array等于null或长度为0，则抛出此异常
      */
-    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, Supplier<E> supplier) {
-        if (isEmpty(array)) {
-            throw supplier.get();
-        }
-        return array;
+    public static <T> T[] requireNotEmpty(T[] array, String message) throws IllegalArgumentException {
+        return requireNotEmpty(array, IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
-     * 断言数组不等于null且length > 0
-     * @param a 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
-     */
-    public static <T> T[] requireNotEmpty(T[] array, String message) {
-        return requireNotEmpty(array, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
+     * 若array等于null或长度为0，则使用抛出{@link IllegalArgumentException}；反之，则返回array。
      * 
      * @param <T>
-     * @param <E>
-     * @param array
-     * @param format
-     * @param args
-     * @return
+     * @param array T[]
+     * @param format String
+     * @param args Object[]
+     * @return T[]
+     * @throws IllegalArgumentException 若array等于null或长度为0，则抛出此异常
      */
-    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, String format, Object... args) {
+    public static <T> T[] requireNotEmpty(T[] array, String format, Object... args) throws IllegalArgumentException {
         return requireNotEmpty(array, IllegalArgumentException::new, format, args);
     }
     
     /**
+     * 若array等于null或长度为0，则使用lambda表达式构造异常并抛出；反之，则返回array。
      * 
      * @param <T>
      * @param <E>
-     * @param array
-     * @param function
-     * @param format
-     * @return
+     * @param array T[]
+     * @param supplier {@code Supplier<Throwable>}
+     * @return T[]
+     * @throws E 若array等于null或长度为0，则抛出supplier构造的异常实例
      */
-    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, Function<String, E> function, String format) {
-        return requireNotEmpty(array, function, format, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
-     * 
-     * @param <T>
-     * @param <E>
-     * @param array
-     * @param function
-     * @param format
-     * @param args
-     * @return
-     */
-    public static <T, E extends RuntimeException> T[] requireNotEmpty(T[] array, Function<String, E> function, String format, Object... args) {
+    @SuppressWarnings("unchecked")
+	public static <T, E extends Throwable> T[] requireNotEmpty(T[] array, Supplier<Throwable> supplier) throws E {
         if (isEmpty(array)) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(supplier);
         }
         return array;
     }
     
     /**
-     * 断言集合不等于null且size > 0
-     * @param collection 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
+     * 若array等于null或长度为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回array。
+     * 
+     * @param <T>
+     * @param <E>
+     * @param array T[]
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @return T[]
+     * @throws E 若array等于null或长度为0，则抛出function构造的异常实例
      */
-    public static <C extends Collection<?>> C requireNotEmpty(C collection) {
+    public static <T, E extends Throwable> T[] requireNotEmpty(T[] array, Function<String, Throwable> function, String message) throws E {
+        return requireNotEmpty(array, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若array等于null或长度为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回array。
+     * 
+     * @param <T>
+     * @param <E>
+     * @param array T[]
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @return T[]
+     * @throws E 若array等于null或长度为0，则抛出function构造的异常实例
+     */
+    @SuppressWarnings("unchecked")
+	public static <T, E extends Throwable> T[] requireNotEmpty(T[] array, Function<String, Throwable> function, String format, Object... args) throws E {
+        if (isEmpty(array)) {
+        	throw (E) newException(function, format, args);
+        }
+        return array;
+    }
+    
+    /**
+     * 若collection等于null或长度为0，则抛出{@link IllegalArgumentException}；反之，则返回collection。
+     * 
+     * @param <C>
+     * @param collection C
+     * @return C
+     * @throws IllegalArgumentException 若collection等于null或长度为0，则抛出此异常
+     */
+    public static <C extends Collection<?>> C requireNotEmpty(C collection) throws IllegalArgumentException {
         return requireNotEmpty(collection, IllegalArgumentException::new);
     }
     
     /**
+     * 若collection等于null或长度为0，则抛出{@link IllegalArgumentException}；反之，则返回collection。
      * 
      * @param <C>
-     * @param <E>
-     * @param collection
-     * @param supplier
-     * @return
+     * @param collection C
+     * @param message String
+     * @return C
+     * @throws IllegalArgumentException 若collection等于null或长度为0，则抛出此异常
      */
-    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, Supplier<E> supplier) {
-        if (isEmpty(collection)) {
-            throw supplier.get();
-        }
-        return collection;
+    public static <C extends Collection<?>> C requireNotEmpty(C collection, String message) throws IllegalArgumentException {
+        return requireNotEmpty(collection, IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
-     * 断言集合不等于null且size > 0
-     * @param collection 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
-     */
-    public static <C extends Collection<?>> C requireNotEmpty(C collection, String message) {
-        return requireNotEmpty(collection, message, EMPTY_OBJ_ARRAY);
-    }
-    
-    /**
+     * 若collection等于null或长度为0，则抛出{@link IllegalArgumentException}；反之，则返回collection。
      * 
      * @param <C>
-     * @param <E>
-     * @param collection
-     * @param format
-     * @param args
-     * @return
+     * @param collection C
+     * @param format String
+     * @param args Object[]
+     * @return C
+     * @throws IllegalArgumentException 若collection等于null或长度为0，则抛出此异常
      */
-    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, String format, Object... args) {
+    public static <C extends Collection<?>> C requireNotEmpty(C collection, String format, Object... args) throws IllegalArgumentException {
         return requireNotEmpty(collection, IllegalArgumentException::new, format, args);
     }
     
     /**
+     * 若collection等于null或长度为0，则使用lambda表达式构造异常并抛出；反之，则返回collection。
      * 
      * @param <C>
      * @param <E>
-     * @param collection
-     * @param function
-     * @param format
-     * @return
+     * @param collection C
+     * @param supplier {@code Supplier<Throwable>}
+     * @return C
+     * @throws E 若collection等于null或长度为0，则抛出supplier构造的异常实例
      */
-    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, Function<String, E> function, String format) {
-        return requireNotEmpty(collection, function, format, EMPTY_OBJ_ARRAY);
+    @SuppressWarnings("unchecked")
+    public static <C extends Collection<?>, E extends Throwable> C requireNotEmpty(C collection, Supplier<Throwable> supplier) throws E {
+    	if (isEmpty(collection)) {
+    		throw (E) newException(supplier);
+    	}
+    	return collection;
     }
     
     /**
+     * 若collection等于null或长度为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回collection。
      * 
      * @param <C>
      * @param <E>
-     * @param collection
-     * @param function
-     * @param format
-     * @param args
-     * @return
+     * @param collection C
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @return C
+     * @throws E 若collection等于null或长度为0，则抛出function构造的异常实例
      */
-    public static <C extends Collection<?>, E extends RuntimeException> C requireNotEmpty(C collection, Function<String, E> function, String format, Object... args) {
+    public static <C extends Collection<?>, E extends Throwable> C requireNotEmpty(C collection, Function<String, Throwable> function, String message) throws E {
+        return requireNotEmpty(collection, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若collection等于null或长度为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回collection。
+     * 
+     * @param <C>
+     * @param <E>
+     * @param collection C
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @return C
+     * @throws E 若collection等于null或长度为0，则抛出function构造的异常实例
+     */
+    @SuppressWarnings("unchecked")
+	public static <C extends Collection<?>, E extends Throwable> C requireNotEmpty(C collection, Function<String, Throwable> function, String format, Object... args) throws E {
         if (isEmpty(collection)) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(function, format, args);
         }
         return collection;
     }
     
     /**
-     * 断言Map不等于null且size > 0
-     * @param m 断言对象
-     * @return 若断言成立则返回断言对象
-     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
+     * 若map等于null或size为0，则抛出{@link IllegalArgumentException}；反之，则返回map。
+     * 
+     * @param <M>
+     * @param map M
+     * @return M
+     * @throws IllegalArgumentException 若map等于null或size为0，则抛出此异常
      */
-    public static <M extends Map<?, ?>> M requireNotEmpty(M map) {
+    public static <M extends Map<?, ?>> M requireNotEmpty(M map) throws IllegalArgumentException {
         return requireNotEmpty(map, IllegalArgumentException::new);
     }
     
     /**
+     * 若map等于null或size为0，则抛出{@link IllegalArgumentException}；反之，则返回map。
      * 
      * @param <M>
-     * @param <E>
-     * @param map
-     * @param supplier
-     * @return
+     * @param map M
+     * @param message String
+     * @return M
+     * @throws IllegalArgumentException 若map等于null或size为0，则抛出此异常
      */
-    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, Supplier<E> supplier) {
-        if (isEmpty(map)) {
-            throw supplier.get();
-        }
-        return map;
-    }
-    
-    /**
-     * 断言Map不等于null且size > 0
-     * @param m 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws EmptyCollectionException 若断言不成立,则抛出该异常
-     */
-    public static <M extends Map<?, ?>> M requireNotEmpty(M map, String message) {
+    public static <M extends Map<?, ?>> M requireNotEmpty(M map, String message) throws IllegalArgumentException {
         return requireNotEmpty(map, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
+     * 若map等于null或size为0，则抛出{@link IllegalArgumentException}；反之，则返回map。
      * 
      * @param <M>
-     * @param <E>
-     * @param map
-     * @param format
-     * @param args
-     * @return
+     * @param map M
+     * @param format String
+     * @param args Object[]
+     * @return M
+     * @throws IllegalArgumentException 若map等于null或size为0，则抛出此异常
      */
-    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, String format, Object... args) {
+    public static <M extends Map<?, ?>> M requireNotEmpty(M map, String format, Object... args) throws IllegalArgumentException {
         return requireNotEmpty(map, IllegalArgumentException::new, format, args);
     }
     
     /**
+     * 若map等于null或size为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回map。
      * 
      * @param <M>
      * @param <E>
-     * @param map
-     * @param function
-     * @param format
-     * @return
+     * @param map M
+     * @param supplier {@code Supplier<Throwable>}
+     * @return M
+     * @throws E 若map等于null或size为0，则抛出supplier构造的异常实例
      */
-    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, Function<String, E> function, String format) {
-        return requireNotEmpty(map, function, format, EMPTY_OBJ_ARRAY);
+    @SuppressWarnings("unchecked")
+    public static <M extends Map<?, ?>, E extends Throwable> M requireNotEmpty(M map, Supplier<Throwable> supplier) throws E {
+    	if (isEmpty(map)) {
+    		throw (E) newException(supplier);
+    	}
+    	return map;
     }
     
     /**
+     * 若map等于null或size为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回map。
      * 
      * @param <M>
      * @param <E>
-     * @param map
-     * @param function
-     * @param format
-     * @param args
-     * @return
+     * @param map M
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @return M
+     * @throws E 若map等于null或size为0，则抛出function构造的异常实例
      */
-    public static <M extends Map<?, ?>, E extends RuntimeException> M requireNotEmpty(M map, Function<String, E> function, String format, Object... args) {
+    public static <M extends Map<?, ?>, E extends Throwable> M requireNotEmpty(M map, Function<String, Throwable> function, String message) throws E {
+        return requireNotEmpty(map, function, message, EMPTY_OBJ_ARRAY);
+    }
+    
+    /**
+     * 若map等于null或size为0，则使用lambda表达式构造携带指定信息异常并抛出；反之，则返回map。
+     * 
+     * @param <M>
+     * @param <E>
+     * @param map M
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @return M
+     * @throws E 若map等于null或size为0，则抛出function构造的异常实例
+     */
+    @SuppressWarnings("unchecked")
+	public static <M extends Map<?, ?>, E extends Throwable> M requireNotEmpty(M map, Function<String, Throwable> function, String format, Object... args) throws E {
         if (isEmpty(map)) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(function, format, args);
         }
         return map;
     }
     
     /**
+     * 若expression等于false，则抛出{@link IllegalArgumentException}；反之，则直接返回。
      * 
-     * @param expression
+     * @param <E>
+     * @param expression boolean
+     * @throws IllegalArgumentException 若expression等于false，则抛出此异常
      */
-    public static void requireTrue(boolean expression) {
+    public static void requireTrue(boolean expression) throws IllegalArgumentException {
         requireTrue(expression, IllegalArgumentException::new);
     }
     
     /**
+     * 若expression等于false，则抛出{@link IllegalArgumentException}；反之，则直接返回。
      * 
      * @param <E>
-     * @param expression
-     * @param supplier
+     * @param expression boolean
+     * @param message String
+     * @throws IllegalArgumentException 若expression等于false，则抛出此异常
      */
-    public static <E extends RuntimeException> void requireTrue(boolean expression, Supplier<E> supplier) {
-        if (!expression) {
-            throw supplier.get();
-        }
+    public static void requireTrue(boolean expression, String message) throws IllegalArgumentException {
+        requireTrue(expression, IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
-     * 断言expression等于true
-     * @param expression 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
-     */
-    public static void requireTrue(boolean expression, String message) {
-        if (!expression) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-    
-    /**
+     * 若expression等于false，则抛出{@link IllegalArgumentException}；反之，则直接返回。
      * 
-     * @param expression
-     * @param format
-     * @param args
+     * @param <E>
+     * @param expression boolean
+     * @param format String
+     * @param args Object[]
+     * @throws IllegalArgumentException 若expression等于false，则抛出此异常
      */
-    public static void requireTrue(boolean expression, String format, Object... args) {
+    public static void requireTrue(boolean expression, String format, Object... args) throws IllegalArgumentException {
         requireTrue(expression, IllegalArgumentException::new, format, args);
     }
     
     /**
+     * 若expression等于false，则使用lambda表达式构造异常并抛出；反之，则直接返回。
      * 
      * @param <E>
-     * @param expression
-     * @param function
-     * @param message
+     * @param expression boolean
+     * @param supplier {@code Supplier<Throwable>}
+     * @throws E 若expression等于false，则抛出supplier构造的异常实例
      */
-    public static <E extends RuntimeException> void requireTrue(boolean expression, Function<String, E> function, String message) {
+    @SuppressWarnings("unchecked")
+    public static <E extends Throwable> void requireTrue(boolean expression, Supplier<Throwable> supplier) throws E {
+    	if (!expression) {
+    		throw (E) newException(supplier);
+    	}
+    }
+    
+    /**
+     * 若expression等于false，则使用lambda表达式构造携带指定信息异常并抛出；反之，则直接返回。
+     * 
+     * @param <E>
+     * @param expression boolean
+     * @param function {@code Function<String, Throwable>}
+     * @param message String
+     * @throws E 若expression等于false，则抛出function构造的异常实例
+     */
+    public static <E extends Throwable> void requireTrue(boolean expression, Function<String, Throwable> function, String message) throws E {
         requireTrue(expression, function, message, EMPTY_OBJ_ARRAY);
     }
     
     /**
+     * 若expression等于false，则使用lambda表达式构造携带指定信息异常并抛出；反之，则直接返回。
      * 
      * @param <E>
-     * @param expression
-     * @param function
-     * @param format
-     * @param args
+     * @param expression boolean
+     * @param function {@code Function<String, Throwable>}
+     * @param format String
+     * @param args Object[]
+     * @throws E 若expression等于false，则抛出function构造的异常实例
      */
-    public static <E extends RuntimeException> void requireTrue(boolean expression, Function<String, E> function, String format, Object... args) {
+    @SuppressWarnings("unchecked")
+	public static <E extends Throwable> void requireTrue(boolean expression, Function<String, Throwable> function, String format, Object... args) throws E {
         if (!expression) {
-            throw function.apply(stringFormat(format, args));
+        	throw (E) newException(function, format, args);
         }
     }
     
     /**
-     * 断言expression等于false
-     * @param expression 断言对象
-     * @param message 断言不成立时的异常信息
-     * @return 若断言成立则返回断言对象
-     * @throws IllegalArgumentException 若断言不成立,则抛出该异常
+     * 若expression等于true，则抛出{@link IllegalArgumentException}；反之，则直接返回。
+     * 
+     * @param expression boolean
+     * @param message String
+     * @throws IllegalArgumentException 若expression等于true，则抛出此异常
      */
-    public static void requireFalse(boolean expression, String message) {
+    public static void requireFalse(boolean expression, String message) throws IllegalArgumentException {
         if (expression) {
-            throw new IllegalArgumentException(message);
+        	throw (IllegalArgumentException) newException(IllegalArgumentException::new, message, EMPTY_OBJ_ARRAY);
         }
     }
-    
     
     
     
