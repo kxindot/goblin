@@ -6,13 +6,12 @@ import static com.kxindot.goblin.Objects.requireTrue;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.isFile;
 import static com.kxindot.goblin.Resources.mkDirs;
-import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-
-import com.kxindot.goblin.io.IIOException;
 
 /**
  * 抽象压缩文件解压器。
@@ -81,7 +80,7 @@ import com.kxindot.goblin.io.IIOException;
 			destination = file.getParent();
 		} else if (!exists(destination)) {
 			if (!creatable) {
-				threx(IIOException::new, "解压输出文件夹不存在: %s", destination);
+				silentThrex(IOException::new, "解压输出文件夹不存在: %s", destination);
 			}
 			mkDirs(destination);
 		}

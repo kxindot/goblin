@@ -3,7 +3,7 @@ package com.kxindot.goblin.codec;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.mkDirs;
-import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 
 /**
@@ -62,7 +61,7 @@ class UnzipUncompresser extends AbstractUncompresser<Unzip> implements Unzip {
 				IO.close(outputStream);
 			}
 		} catch (IOException e) {
-			threx(IIOException::new, e);
+			silentThrex(e);
 		} finally {
 			IO.close(outputStream);
 		}

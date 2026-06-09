@@ -9,7 +9,6 @@ import static com.kxindot.goblin.Objects.requireNotNull;
 import java.util.Collections;
 import java.util.List;
 
-import com.kxindot.goblin.Throws;
 import com.kxindot.goblin.logger.Logger;
 import com.kxindot.goblin.logger.LoggerFactory;
 
@@ -179,10 +178,7 @@ public class Completable implements Runnable {
 			try {
 				runnable.run();
 			} catch (Throwable e) {
-				error = Throws.unwrapperException(e);
-				if (error.getCause() instanceof InterruptedException) {
-					error = error.getCause();
-				}
+				error = e;
 			}
 			thread = null;
 			cost = System.nanoTime() - start;

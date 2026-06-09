@@ -10,18 +10,20 @@ import static com.kxindot.goblin.Resources.UUID;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.isFile;
 import static com.kxindot.goblin.Resources.mkDirs;
-import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 
 /**
@@ -141,18 +143,18 @@ abstract class AbstractCompresser<T extends Compresser<T>> implements Compresser
 		if (isNull(destination)) {
 			file = Paths.get(fileName);
 			destination = file.getParent();
-			requireNotNull(destination, IIOException::new, "请指定压缩文件输出文件夹");
+			requireNotNull(destination, "请指定压缩文件输出文件夹");
 		} else {
 			file = destination.resolve(fileName);
 		}
 		if (!exists(destination)) {
 			if (!creatable) {
-				threx(IIOException::new, "压缩文件输出文件夹不存在: %s", destination);
+				silentThrex(FileNotFoundException::new, "压缩文件输出文件夹不存在: %s", destination);
 			}
 			mkDirs(destination);
 		}
 		if (exists(file) && !override) {
-			threx(IIOException::new, "压缩文件已存在: %s", file);
+			silentThrex(FileAlreadyExistsException::new, "压缩文件已存在: %s", file);
 		}
 		compressTo(IO.openOutputStream(file));
 		return file;
@@ -174,13 +176,13 @@ abstract class AbstractCompresser<T extends Compresser<T>> implements Compresser
 	/**
 	 * 压缩前检查。
 	 * 
-	 * @throws IIOException 若出现任何错误，则抛出此异常
+	 * @throws IOException 若出现任何错误，则抛出此异常
 	 */
 	protected void check() {
 		if (closed) {
-			threx(IIOException::new, "压缩处理器已关闭");
+			silentThrex(IOException::new, "压缩处理器已关闭");
 		} else if (isNull(name) || sources.isEmpty()) {
-			threx(IIOException::new, "待压缩内容不能为空");
+			silentThrex(IOException::new, "待压缩内容不能为空");
 		}
 	}
 	
