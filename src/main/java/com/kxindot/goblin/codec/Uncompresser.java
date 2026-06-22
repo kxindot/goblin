@@ -1,6 +1,7 @@
 package com.kxindot.goblin.codec;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public interface Uncompresser<T extends Uncompresser<T>> {
 	 * @param path 待解压文件
 	 * @return T
 	 * @throws IllegalArgumentException 若待解压文件不存在，则抛出此异常
+	 * @throws IOException 若待解压文件无法打开，则抛出此异常
 	 */
 	T set(Path path);
 	
@@ -35,8 +37,18 @@ public interface Uncompresser<T extends Uncompresser<T>> {
 	 * @param file 待解压文件
 	 * @return T
 	 * @throws IllegalArgumentException 若待解压文件不存在，则抛出此异常
+	 * @throws IOException 若待解压文件无法打开，则抛出此异常
 	 */
 	T set(File file);
+	
+	/**
+	 * 设置待解压输入流。
+	 * 
+	 * @param inputStream InputStream
+	 * @return T
+	 * throws NullPointerException 若inputStream等于null，则抛出此异常
+	 */
+	T set(InputStream inputStream);
 
 	/**
 	 * 设置压缩文件解压输出文件夹路径。若文件夹不存在，则文件夹将会被自动创建。
