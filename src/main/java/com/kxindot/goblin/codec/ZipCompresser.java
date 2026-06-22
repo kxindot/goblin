@@ -4,7 +4,7 @@ import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.requireTrue;
 import static com.kxindot.goblin.Objects.stringJoinWith;
-import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.silentThrex;
 import static java.io.File.separator;
 
 import java.io.BufferedInputStream;
@@ -17,8 +17,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import com.kxindot.goblin.io.IIOException;
 
 /**
  * Zip文件格式压缩工具。
@@ -86,7 +84,7 @@ class ZipCompresser extends AbstractCompresser<Zip> implements Zip {
 				}
 			}
 		} catch (IOException e) {
-			threx(IIOException::new, e);
+			silentThrex(e);
 		} finally {
 			close();
 		}

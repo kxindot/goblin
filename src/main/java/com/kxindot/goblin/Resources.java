@@ -13,6 +13,7 @@ import static com.kxindot.goblin.Objects.Exclamation;
 import static com.kxindot.goblin.Objects.Hyphen;
 import static com.kxindot.goblin.Objects.Slash;
 import static com.kxindot.goblin.Objects.containsAny;
+import static com.kxindot.goblin.Objects.isEqual;
 import static com.kxindot.goblin.Objects.isNotBlank;
 import static com.kxindot.goblin.Objects.isNotEmpty;
 import static com.kxindot.goblin.Objects.isNull;
@@ -21,6 +22,7 @@ import static com.kxindot.goblin.Objects.newHashSet;
 import static com.kxindot.goblin.Objects.requireNotBlank;
 import static com.kxindot.goblin.Objects.requireNotNull;
 import static com.kxindot.goblin.Objects.stringRemove;
+import static com.kxindot.goblin.Throws.newException;
 import static com.kxindot.goblin.Throws.silentThrex;
 import static com.kxindot.goblin.Throws.threx;
 import static java.io.File.separator;
@@ -55,7 +57,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import com.kxindot.goblin.io.IIOException;
+import javax.imageio.IIOException;
+
 import com.kxindot.goblin.io.IO;
 import com.kxindot.goblin.io.IOInput;
 import com.kxindot.goblin.io.IOOutput;
@@ -92,11 +95,23 @@ public class Resources {
     /**
      * 文件URL协议头: file
      */
-    public static final String URL_Protocol_File = "file";
+    public static final String URL_PROTOCOL_FILE = "file";
+    /**
+     * URL协议头：http 
+     */
+    public static final String URL_PROTOCOL_HTTP = "http";
+    /**
+     * URL协议头：https
+     */
+    public static final String URL_PROTOCOL_HTTPS = "https";
     /**
      * jar包后缀: .jar
      */
     public static final String Jar_Extension = ".jar";
+    /**
+     * zip包后缀：.zip
+     */
+    private static final String ZIP_EXTENSION = ".zip";
     /**
      * jar包URL分隔符: !/
      */
@@ -254,7 +269,7 @@ public class Resources {
         requireNotNull(loader);
         String protocol = url.getProtocol();
         if (!URL_Protocol_Jar.equals(protocol)) {
-            if (URL_Protocol_File.equals(protocol)
+            if (URL_PROTOCOL_FILE.equals(protocol)
                     && url.toExternalForm().endsWith(Jar_Extension)) {
                 try {
                     url = new URL(URL_Protocol_Jar + Colon + url.toExternalForm() + Jar_Entry_Sep);
@@ -372,20 +387,15 @@ public class Resources {
     }
     
     /**
-     * 判断{@link URI}是否指向一个文件
+     * 判断{@link URI}是否指向一个本地文件。
+     * 
      * @param uri URI
      * @return boolean
      */
     public static boolean isFile(URI uri) {
         if (uri != null) {
-            if (isNotBlank(uri.getScheme())) {
-                try {
-                    return isFile(Paths.get(uri));
-                } catch (Throwable e) {
-                    // do nothing
-                }
-            }
-            return isFile(uri.getPath());
+        	Path path = uri.isAbsolute() ? Paths.get(uri) : Paths.get(uri.toString());
+        	return isFile(path);
         }
         return false;
     }
@@ -424,6 +434,36 @@ public class Resources {
         return directory != null && Files.isDirectory(directory);
     }
     
+	/**
+	 * 判断是否zip文件。
+	 * 
+	 * @param file String
+	 * @return boolean
+	 */
+	public static boolean isZipFile(String file) {
+    	return isFile(file) && file.endsWith(ZIP_EXTENSION);
+    }
+    
+	/**
+	 * 判断是否zip文件。
+	 * 
+	 * @param file File
+	 * @return boolean
+	 */
+    public static boolean isZipFile(File file) {
+    	return isFile(file) && file.getName().endsWith(ZIP_EXTENSION);
+    }
+    
+    /**
+     * 判断是否zip文件。
+     * 
+     * @param file Path
+     * @return boolean
+     */
+    public static boolean isZipFile(Path file) {
+    	return isFile(file) && file.getFileName().toString().endsWith(ZIP_EXTENSION);
+    }
+    
     public static boolean isJarFile(String jarPath) {
         return isFile(jarPath) && jarPath.endsWith(Jar_Extension);
     }
@@ -447,7 +487,7 @@ public class Resources {
     public static boolean isJarFile(URL url) {
         return url != null
                 && (URL_Protocol_Jar.equals(url.getProtocol())
-                || (URL_Protocol_File.equals(url.getProtocol())
+                || (URL_PROTOCOL_FILE.equals(url.getProtocol())
                         && url.toExternalForm().endsWith(Jar_Extension)));
     }
     
@@ -1006,6 +1046,34 @@ public class Resources {
             threx(IllegalArgumentException::new, "%s不是%s的子目录!", child, parent);
         }
         return mkDirs(parent.resolve(child));
+    }
+    
+    /**
+     * 创建临时文件夹。{@code prefix}可以等于null。
+     * 
+     * @param prefix String
+     * @return Path
+     * @throws IOException 若创建失败则抛出此异常
+     */
+    public static Path mkTempDir() {
+    	return mkTempDir(null);
+    }
+    
+    /**
+     * 创建临时文件夹。{@code prefix}可以等于null。
+     * 
+     * @param prefix String
+     * @return Path
+     * @throws IOException 若创建失败则抛出此异常
+     */
+    public static Path mkTempDir(String prefix) {
+    	Path dir = null;
+    	try {
+			dir = Files.createTempDirectory(prefix);
+		} catch (IOException e) {
+			silentThrex(e, "创建临时文件夹失败");
+		}
+    	return dir;
     }
     
     /**
@@ -1582,46 +1650,202 @@ public class Resources {
 				consumer.accept((Path) iterator.next());
 			}
         } catch (IOException e) {
-        	threx(IIOException::new, e);
+        	silentThrex(e);
         }
     }
     
     /**
-     * 尝试将{@link URL}对象转换为{@link Path}对象。
-     * 若{@link URL}对象不符合{@link URI}标准，则抛出异常。
+     * 将{@link URI}对象转换为{@link Path}对象。
      * 
-     * @param url URL
+     * @param uri URL
      * @return Path
+     * @throws ResourceException 若{@link URL}对象不是Absolute且不存在或不是{@code file}协议，则抛出此异常
      */
-    public static Path toPath(URL url) {
-    	Path path = null;
-    	try {
-			path = Paths.get(url.toURI());
-		} catch (URISyntaxException e) {
-			silentThrex(e);
+    public static Path toPath(URI uri) {
+    	if (!uri.isAbsolute()) {
+    		Path path = Paths.get(uri.toString());
+			if (exists(path)) {
+				return path;
+			}
+		} else if (isFileProtocol(uri)) {
+			return Paths.get(uri);
 		}
-    	return path;
+    	throw newException(ResourceException::new, "URI未描述文件资源，不能转换为Path：%s", uri);
     }
     
     /**
-     * 尝试将{@link Path}对象转换为{@link URL}对象。
-     * 若{@link Path}对象不符合{@link URL}标准，则抛出异常。
+     * 将{@link URL}对象转换为{@link Path}对象。
      * 
+     * @see #toUri(URL)
+     * @see #toPath(URI)
+     * @param url URL
+     * @return Path
+     * @throws URISyntaxException 若{@link URL}对象不符合{@link URI}标准，则抛出此异常
+     * @throws ResourceException 若{@link URL}对象不是{@code file}协议，则抛出此异常
+     */
+    public static Path toPath(URL url) {
+    	return toPath(toURI(url));
+    }
+    
+    /**
+     * 将字符串转换为{@link URI}对象。
+     * 
+     * @see URI#URI(String)
+     * @param str String
+     * @return URI
+     * @throws URISyntaxException 若str不符合URI语法规范，则抛出此异常
+     */
+    public static URI toURI(String str) {
+    	URI uri = null;
+    	try {
+			uri = new URI(str);
+		} catch (URISyntaxException e) {
+			silentThrex(e, "字符串不符合URI语法规范：%s", str);
+		}
+    	return uri;
+    }
+    
+    /**
+     * 将{@link Path}对象转换为{@link URI}对象。
+     * 
+     * @see Path#toUri()
+     * @param path Path
+     * @return URI
+     */
+    public static URI toURI(Path path) {
+    	return path.toUri();
+    }
+    
+    /**
+     * 将{@link URL}对象转换为{@link URI}对象。
+     * 
+     * @param url URL
+     * @return URI
+     * @throws URISyntaxException 若{@link URL}对象不符合{@link URI}标准，则抛出此异常
+     */
+    public static URI toURI(URL url) {
+    	URI uri = null;
+    	try {
+			uri = url.toURI();
+		} catch (URISyntaxException e) {
+			silentThrex(e, "URL不符合URI语法规范：%s", url);
+		}
+    	return uri;
+    }
+    
+    /**
+     * 将{@link Path}对象转换为{@link URL}对象。
+     * 
+     * @see #toURL(URI)
 	 * @param path Path
 	 * @return URL
+	 * @throws MalformedURLException 若{@link Path}对象不符合{@link URL}标准，则抛出此异常
 	 */
 	public static URL toURL(Path path) {
+		return toURL(path.toUri());
+	}
+	
+	/**
+	 * 将{@link URI}对象转换为{@link URL}对象。
+	 * 
+	 * @param uri URI
+	 * @return URL
+	 * @throws MalformedURLException 若{@link URI}对象不符合{@link URL}标准，则抛出此异常
+	 */
+	public static URL toURL(URI uri) {
 		URL url = null;
 		try {
-			url = path.toUri().toURL();
+			url = uri.toURL();
 		} catch (MalformedURLException e) {
-			silentThrex(e);
+			silentThrex(e, "URI不符合URL格式规范：%s", uri);
 		}
 		return url;
 	}
     
     
     /**************************************************IO**************************************************/
+	
+	
+	
+	/**
+	 * 判断{@link URI}是否File协议。
+	 * 
+	 * @param uri URI
+	 * @return boolean
+	 */
+	public static boolean isFileProtocol(URI uri) {
+		return isEqual(URL_PROTOCOL_FILE, uri.getScheme());
+	}
+	
+	/**
+	 * 判断{@link URL}是否File协议。
+	 * 
+	 * @param url URL
+	 * @return boolean
+	 */
+	public static boolean isFileProtocol(URL url) {
+		return isEqual(URL_PROTOCOL_FILE, url.getProtocol());
+	}
+	
+	/**
+	 * 判断{@link URI}是否HTTP协议。
+	 * 
+	 * @param uri URI
+	 * @return boolean
+	 */
+	public static boolean isHttpProtocol(URI uri) {
+		return isEqual(URL_PROTOCOL_HTTP, uri.getScheme());
+	}
+	
+	/**
+	 * 判断{@link URI}是否HTTPS协议。
+	 * 
+	 * @param uri URI
+	 * @return boolean
+	 */
+	public static boolean isHttpsProtocol(URI uri) {
+		return isEqual(URL_PROTOCOL_HTTPS, uri.getScheme());
+	}
+	
+	/**
+	 * 判断{@link URI}是否HTTP或HTTPS协议。
+	 * 
+	 * @param uri URI
+	 * @return boolean
+	 */
+	public static boolean isHttpOrHttpsProtocol(URI uri) {
+		return isHttpProtocol(uri) || isHttpsProtocol(uri);
+	}
+	
+	/**
+	 * 判断{@link URL}是否HTTP协议。
+	 * 
+	 * @param url URL
+	 * @return boolean
+	 */
+	public static boolean isHttpProtocol(URL url) {
+		return isEqual(URL_PROTOCOL_HTTP, url.getProtocol());
+	}
+	
+	/**
+	 * 判断{@link URL}是否HTTPS协议。
+	 * 
+	 * @param url URL
+	 * @return boolean
+	 */
+	public static boolean isHttpsProtocol(URL url) {
+		return isEqual(URL_PROTOCOL_HTTPS, url.getProtocol());
+	}
+	
+	/**
+	 * 判断{@link URL}是否HTTP或HTTPS协议。
+	 * 
+	 * @param url URL
+	 * @return boolean
+	 */
+	public static boolean isHttpOrHttpsProtocol(URL url) {
+		return isHttpProtocol(url) || isHttpsProtocol(url);
+	}
     
     
     public static IOInput load(URI uri) {
@@ -1731,7 +1955,7 @@ public class Resources {
         @Override
         default Collection<T> load(URL url) throws Exception {
             String protocol = url.getProtocol();
-            if (URL_Protocol_File.equals(protocol)) {
+            if (URL_PROTOCOL_FILE.equals(protocol)) {
                 return loadFromFile(url, Paths.get(url.toURI()));
             } else if (URL_Protocol_Jar.equals(protocol)) {
                 Collection<T> c = null;
@@ -1819,23 +2043,48 @@ public class Resources {
         
     }
     
-    
     /**
-     * @author zhaoqingjiang
+     * 资源异常。
+     * 
+     * @author ZhaoQingJiang
      */
-    public static class ResourceLoadException extends RuntimeException {
+    public static class ResourceException extends RuntimeException {
 
-        private static final long serialVersionUID = -2197349031983803955L;
+		private static final long serialVersionUID = 2945983611014366284L;
 
-		protected ResourceLoadException(String message, Throwable cause) {
+		ResourceException(String message, Throwable cause) {
 			super(message, cause);
 		}
 
-		protected ResourceLoadException(String message) {
+		ResourceException(String message) {
 			super(message);
 		}
 
-		protected ResourceLoadException(Throwable cause) {
+		ResourceException(Throwable cause) {
+			super(cause);
+		}
+		
+    }
+    
+    
+    /**
+     * 加载资源异常。
+     * 
+     * @author ZhaoQingJiang
+     */
+    public static class ResourceLoadException extends ResourceException {
+
+        private static final long serialVersionUID = -2197349031983803955L;
+
+		ResourceLoadException(String message, Throwable cause) {
+			super(message, cause);
+		}
+
+		ResourceLoadException(String message) {
+			super(message);
+		}
+
+		ResourceLoadException(Throwable cause) {
 			super(cause);
 		}
     }

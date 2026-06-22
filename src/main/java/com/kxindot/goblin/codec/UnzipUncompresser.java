@@ -3,16 +3,16 @@ package com.kxindot.goblin.codec;
 import static com.kxindot.goblin.Objects.newArrayList;
 import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.mkDirs;
-import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.kxindot.goblin.io.IIOException;
 import com.kxindot.goblin.io.IO;
 
 /**
@@ -36,13 +36,14 @@ class UnzipUncompresser extends AbstractUncompresser<Unzip> implements Unzip {
 	}
 	
 	@Override
-	protected List<Path> uncompress(Path file, Path destination, boolean override) {
+	protected List<Path> uncompress(InputStream inputStream, Path destination, boolean override) {
 		ZipEntry entry = null;
 		List<Path> files = newArrayList();
 		BufferedOutputStream outputStream = null;
-		try (ZipInputStream inputStream = new ZipInputStream(IO.openInputStream(file))) {
+		try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
 			Path path = null;
-			while (null != (entry = inputStream.getNextEntry())) {
+			byte[] buf = buffer();
+			while (null != (entry = zipInputStream.getNextEntry())) {
 				path = destination.resolve(entry.getName());
 				if (entry.isDirectory()) {
 					if (!exists(path)) {
@@ -62,7 +63,7 @@ class UnzipUncompresser extends AbstractUncompresser<Unzip> implements Unzip {
 				IO.close(outputStream);
 			}
 		} catch (IOException e) {
-			threx(IIOException::new, e);
+			silentThrex(e);
 		} finally {
 			IO.close(outputStream);
 		}

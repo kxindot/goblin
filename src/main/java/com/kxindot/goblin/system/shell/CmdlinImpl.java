@@ -12,9 +12,7 @@ import static com.kxindot.goblin.Resources.exists;
 import static com.kxindot.goblin.Resources.isDirectory;
 import static com.kxindot.goblin.Resources.load;
 import static com.kxindot.goblin.Resources.readString;
-import static com.kxindot.goblin.Throws.isWrapperException;
 import static com.kxindot.goblin.Throws.threx;
-import static com.kxindot.goblin.Throws.unwrapperException;
 import static com.kxindot.goblin.system.OSFamily.WINDOWS;
 import static java.util.Collections.synchronizedList;
 import static java.util.Collections.synchronizedMap;
@@ -152,9 +150,6 @@ public class CmdlinImpl implements Cmdline {
 			Process process = exec();
 			output = readString(process.getInputStream());
 		} catch (Throwable e) {
-			if (isWrapperException(e)) {
-				e = unwrapperException(e);
-			}
 			ex = e;
 		}
 		callback.afterProcess(output, ex);

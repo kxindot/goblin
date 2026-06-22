@@ -2,7 +2,7 @@ package com.kxindot.goblin.method;
 
 import static com.kxindot.goblin.Objects.isNull;
 import static com.kxindot.goblin.Objects.requireNotNull;
-import static com.kxindot.goblin.Throws.threx;
+import static com.kxindot.goblin.Throws.silentThrex;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
@@ -13,7 +13,6 @@ import java.util.function.BiConsumer;
 import com.kxindot.goblin.Objects;
 import com.kxindot.goblin.Reflections;
 import com.kxindot.goblin.Reflections.MethodLambda;
-import com.kxindot.goblin.Throws.WrapperException;
 import com.kxindot.goblin.concurrent.CompletableExecutorService;
 import com.kxindot.goblin.concurrent.Threads;
 import com.kxindot.goblin.method.function.FiveArgConsumer;
@@ -424,8 +423,7 @@ public interface MethodReference<T, R> {
 			} catch (Throwable e) {
 				MethodLambda lambda = Reflections.parseMethodReferenceToLambda(method);
 				if (isNull(handler)) {
-					threx(MethodInvocationException::new, e, "%s#%s方法运行异常"
-							, lambda.getSimpleClassName(), lambda.getMethodName());
+					silentThrex(e, "%s#%s方法运行异常", lambda.getSimpleClassName(), lambda.getMethodName());
 				}
 				handler.accept(lambda, e);
 			}
@@ -474,22 +472,6 @@ public interface MethodReference<T, R> {
         	
         }
         
-    }
-    
-    
-    /**
-     * 调用方法错误异常.
-     * 
-     * @author ZhaoQingJiang
-     */
-    public class MethodInvocationException extends WrapperException {
-
-        private static final long serialVersionUID = -2675028474403209435L;
-
-        public MethodInvocationException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
     }
     
 }

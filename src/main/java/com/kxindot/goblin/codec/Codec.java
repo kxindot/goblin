@@ -1,5 +1,6 @@
 package com.kxindot.goblin.codec;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -9,7 +10,6 @@ import java.util.List;
  * @author ZhaoQingJiang
  */
 public class Codec {
-	
 	
     /**
      * 获取Zip文件格式压缩工具。
@@ -48,6 +48,17 @@ public class Codec {
      */
     public static List<Path> unzip(Path file, Path destination) {
     	return unzip().set(file).destination(destination).uncompress();
+    }
+    
+    /**
+     * Zip输入流解压缩。
+     * 
+     * @param inputStream zip输入流
+     * @param destination 解压输出文件夹
+     * @return 解压出的文件列表
+     */
+    public static List<Path> unzip(InputStream inputStream, Path destination) {
+    	return unzip().set(inputStream).destination(destination).uncompress();
     }
     
 }
