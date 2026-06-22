@@ -7,12 +7,27 @@ import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.proxy.Enhancer;
 
 /**
- * Cglib代理便捷工具类(静态方法)
- * @author zhaoqingjiang
+ * 代理工具。
+ * 
+ * @author ZhaoQingJiang
  */
 public final class CglibProxy {
 
     private static final NamingPolicy POLICY = new NamingPolicy();
+    
+    /**
+     * 获取代理对象的实际类型。
+     * 
+     * @param proxy Object
+     * @return {@code Class<?>}
+     */
+    public static Class<?> getActualType(Object proxy) {
+    	Class<?> type = proxy.getClass();
+        if (type.toString().contains(NamingPolicy.IDENTIFIER)) {
+            type = type.getSuperclass();
+        }
+        return type;
+    }
     
     /**
      * 创建指定类的代理对象
@@ -54,8 +69,12 @@ public final class CglibProxy {
      * @author ZhaoQingJiang
      */
     static class NamingPolicy extends DefaultNamingPolicy {
+    	
+    	static final String TAG = "ByGoblin";
+    	static final String IDENTIFIER = "$$EnhancerByGoblin$$";
+    	
         @Override
-        protected String getTag() {return "ByGoblin";}
+        protected String getTag() {return TAG;}
     }
     
 }
