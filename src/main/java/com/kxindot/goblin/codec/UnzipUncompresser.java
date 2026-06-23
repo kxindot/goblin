@@ -37,11 +37,10 @@ class UnzipUncompresser extends AbstractUncompresser<Unzip> implements Unzip {
 	
 	@Override
 	protected List<Path> uncompress(InputStream inputStream, Path destination, boolean override) {
-		ZipEntry entry = null;
 		List<Path> files = newArrayList();
-		BufferedOutputStream outputStream = null;
 		try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
 			Path path = null;
+			ZipEntry entry = null;
 			byte[] buf = buffer();
 			while (null != (entry = zipInputStream.getNextEntry())) {
 				path = destination.resolve(entry.getName());
@@ -56,16 +55,15 @@ class UnzipUncompresser extends AbstractUncompresser<Unzip> implements Unzip {
 					continue;
 				}
 				int i = 0;
-				outputStream = new BufferedOutputStream(IO.openOutputStream(path));
-				while ((i = inputStream.read(buf)) != -1) {
-					outputStream.write(buf, 0, i);
+				try (BufferedOutputStream outputStream = new BufferedOutputStream(IO.openOutputStream(path));) {
+					while ((i = zipInputStream.read(buf)) != -1) {
+						outputStream.write(buf, 0, i);
+					}
 				}
-				IO.close(outputStream);
+				
 			}
 		} catch (IOException e) {
 			silentThrex(e);
-		} finally {
-			IO.close(outputStream);
 		}
 		return files;
 	}
