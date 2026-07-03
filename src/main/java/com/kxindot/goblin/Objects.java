@@ -24,12 +24,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -2576,6 +2578,70 @@ public final class Objects {
     public static <T> T[] toArray(Collection<T> collection, Class<T[]> type) {
         return collection.toArray(newArrayInstance(type, collection.size()));
     }
+    
+    /**
+     * 移除{@link List}中所有的null元素。
+     * 
+     * @param list {@code List<?>}
+     * @return int 移除null元素的数量
+     */
+    public static int removeNullValue(List<?> list) {
+    	return removeValue(list, e -> null == e);
+    }
+    
+    /**
+     * 从{@link List}中移除{@link Predicate#test(Object)}返回true的值。
+     * 
+     * @param <E>
+     * @param list {@code List<E>}
+     * @param filter {@code Predicate<E>}
+     * @return int 移除元素的数量
+     */
+    public static <E> int removeValue(List<E> list, Predicate<E> filter) {
+    	if (isNotEmpty(list)) {
+			if (ArrayList.class.isInstance(list) 
+					|| Vector.class.isInstance(list)) {
+				return removeIf(list, filter);
+			}
+			int c = 0;
+	        final Iterator<E> each = list.iterator();
+	        while (each.hasNext()) {
+	            if (filter.test(each.next())) {
+	                each.remove();
+	                c++;
+	            }
+	        }
+	        return c;
+		}
+    	return 0;
+    }
+    
+    /**
+     * 从{@link List}中移除{@link Predicate#test(Object)}返回true的值。
+     * 
+     * @param <E>
+     * @param list {@code List<E>}
+     * @param filter {@code Predicate<E>}
+     * @return int 移除元素的数量
+     */
+    private static <E> int removeIf(List<E> list, Predicate<E> filter) {
+    	int wp = 0;
+    	int size = list.size();
+		for (int rp = 0; rp < size; rp++) {
+    		E element = list.get(rp);
+    		if (!filter.test(element)) {
+				if (wp != rp) {
+					list.set(wp, element);
+				}
+				wp++;
+			}
+		}
+    	if (wp < size) {
+			list.subList(wp, size).clear();
+		}
+    	return size - wp;
+    }
+    
     
     
     /**------------------Map------------------**/

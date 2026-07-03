@@ -51,4 +51,9 @@
     1. 修复Unzip工具EOFException问题；
     
     
+### 1.3.0（2026-07-03）
+
+    1. 新增移除List指定元素工具方法：Objects#removeValue、Objects#removeNullValue；
+    
+    
     
